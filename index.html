@@ -10,7 +10,6 @@
   <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
 </head>
 <style>
-  /* Additional styles to enhance appearance */
   body {
       background: #091F2F;
       text-align: center;
@@ -42,20 +41,17 @@
         const videoContainer = document.getElementById('my_video_1');
         const videoSources = [
             { src: "https://www.tutorialspoint.com/videos/sample1080p.mp4", type: "video/mp4" },
-            { src: "https://www.tutorialspoint.com/videos/video1.mp4", type: "video/mp4" }
+            { src: "https://www.tutorialspoint.com/videos/video1.mp4", type: "video/mp4" },
+            { src: "https://media.w3.org/2010/05/sintel/trailer.mp4", type: "video/mp4" },
         ];
-
-        let currentVideoIndex = 0;
 
         function playNextVideo() {
             const randomIndex = Math.floor(Math.random() * videoSources.length);
             const videoSource = videoSources[randomIndex];
             
-            const player = videojs(videoContainer, { controls: true, loop: false });
+            const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
             player.src({ src: videoSource.src, type: videoSource.type });
             player.play();
-
-            currentVideoIndex++;
 
             player.on('ended', function() {
                 playNextVideo();
