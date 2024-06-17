@@ -75,6 +75,11 @@
         // ];
 
         function playNextVideo() {
+
+            if (videoSources.length === 0) {
+                console.error('No video sources available.');
+                return;
+            }
             const randomIndex = Math.floor(Math.random() * videoSources.length);
             const videoSource = videoSources[randomIndex];
             
