@@ -47,12 +47,12 @@
         let winVideoSources = [];
         let transitionVideoSources = [];
         let isWinVideoNext = true;
+        const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
 
         function fetchVideoFiles(folderPath, videoSourcesArray, callback) {
         fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`)
           .then(response => response.json())
           .then(data => {
-            // TODO: These videos need to be mp4 or webm videos, either export in these formats or change this line
             const videoFiles = data.filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')));
 
             videoFiles.forEach(file => {
@@ -71,18 +71,9 @@
           });
       }
 
-      // Fetch videos from both folders
-      fetchVideoFiles(winFolderPath, winVideoSources, () => {
-        fetchVideoFiles(transitionFolderPath, transitionVideoSources, playNextVideo);
-      });
-
       function playNextVideo() {
-        let videoSources;
-        if (isWinVideoNext) {
-          videoSources = winVideoSources;
-        } else {
-          videoSources = transitionVideoSources;
-        }
+        let videoSources = isWinVideoNext ? winVideoSources : transitionVideoSources;
+        isWinVideoNext = !isWinVideoNext; // Toggle for next video
 
         if (videoSources.length === 0) {
           console.error('No video sources available.');
@@ -92,17 +83,17 @@
         const randomIndex = Math.floor(Math.random() * videoSources.length);
         const videoSource = videoSources[randomIndex];
 
-        const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
         player.src({ src: videoSource.src, type: videoSource.type });
         player.play();
 
-        player.one('ended', function() {
-          isWinVideoNext = !isWinVideoNext;
-          playNextVideo();
-        });
+        player.one('ended', playNextVideo);
       }
-    });
 
+      // Fetch videos from both folders and start playing
+      fetchVideoFiles(winFolderPath, winVideoSources, () => {
+        fetchVideoFiles(transitionFolderPath, transitionVideoSources, playNextVideo);
+      });
+    });
 </script>
 </body>
 </html>
