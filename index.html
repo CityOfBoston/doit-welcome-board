@@ -42,25 +42,24 @@
         const videoContainer = 'my_video_1'
         const repoOwner = 'CityOfBoston';
         const repoName = 'doit-welcome-board';
-        const folderPath = 'content';
-        let videoSources = [];
+        const winFolderPath = 'wins';
+        const transitionFolderPath = 'transitions'
+        let winVideoSources = [];
 
-        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`)
+        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${winFolderPath}`)
         .then(response => response.json())
         .then(data => {
           // TODO: we can change this but right now it's filtering out things that aren't .mp4 
-          const videoFiles = data.filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')));
+          const winVideoFiles = data.filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')));
 
-          videoFiles.forEach(file => {
+          winVideoFiles.forEach(file => {
             const source = {
               src: file.download_url,
               type: `video/${file.name.split('.').pop()}`
             };
-            videoSources.push(source);
+            winVideoSources.push(source);
           });
-        
-          console.log('Video Sources:', videoSources); 
-        
+                
           playNextVideo();
         })
         
@@ -76,12 +75,12 @@
 
         function playNextVideo() {
 
-            if (videoSources.length === 0) {
+            if (winVideoSources.length === 0) {
                 console.error('No video sources available.');
                 return;
             }
-            const randomIndex = Math.floor(Math.random() * videoSources.length);
-            const videoSource = videoSources[randomIndex];
+            const randomIndex = Math.floor(Math.random() * winVideoSources.length);
+            const videoSource = winVideoSources[randomIndex];
             
             const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
             player.src({ src: videoSource.src, type: videoSource.type });
