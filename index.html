@@ -45,54 +45,64 @@
         const winFolderPath = 'wins';
         const transitionFolderPath = 'transitions'
         let winVideoSources = [];
+        let transitionVideoSources = [];
+        let isWinVideoNext = true;
 
-        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${winFolderPath}`)
-        .then(response => response.json())
-        .then(data => {
-          // TODO: we can change this but right now it's filtering out things that aren't .mp4 
-          const winVideoFiles = data.filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')));
+        function fetchVideoFiles(folderPath, videoSourcesArray, callback) {
+        fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`)
+          .then(response => response.json())
+          .then(data => {
+            // TODO: These videos need to be mp4 or webm videos, either export in these formats or change this line
+            const videoFiles = data.filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')));
 
-          winVideoFiles.forEach(file => {
-            const source = {
-              src: file.download_url,
-              type: `video/${file.name.split('.').pop()}`
-            };
-            winVideoSources.push(source);
-          });
-                
-          playNextVideo();
-        })
-        
-        .catch(error => {
-          console.error('Error fetching video files:', error);
-        });
-
-        // const videoSources = [
-        //     // { src: "content/Arnie_Crying.gif", type: "image/gif" },
-        //     // { src: "content/Arnie_Excited_Head_Shake.gif", type: "image/gif" },
-        //     { src: "content/BasketBall_Rewind.mp4", type: "video/mp4" },
-        // ];
-
-        function playNextVideo() {
-
-            if (winVideoSources.length === 0) {
-                console.error('No video sources available.');
-                return;
-            }
-            const randomIndex = Math.floor(Math.random() * winVideoSources.length);
-            const videoSource = winVideoSources[randomIndex];
-            
-            const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
-            player.src({ src: videoSource.src, type: videoSource.type });
-            player.play();
-
-            player.on('ended', function() {
-                playNextVideo();
+            videoFiles.forEach(file => {
+              const source = {
+                src: file.download_url,
+                type: `video/${file.name.split('.').pop()}`
+              };
+              videoSourcesArray.push(source);
             });
+
+            callback();
+          })
+          .catch(error => {
+            console.error(`Error fetching video files from ${folderPath}:`, error);
+            callback();
+          });
+      }
+
+      // Fetch videos from both folders
+      fetchVideoFiles(winFolderPath, winVideoSources, () => {
+        fetchVideoFiles(transitionFolderPath, transitionVideoSources, playNextVideo);
+      });
+
+      function playNextVideo() {
+        let videoSources;
+        if (isWinVideoNext) {
+          videoSources = winVideoSources;
+        } else {
+          videoSources = transitionVideoSources;
         }
 
-        // playNextVideo();
+        if (videoSources.length === 0) {
+          console.error('No video sources available.');
+          return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * videoSources.length);
+        const videoSource = videoSources[randomIndex];
+
+        const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
+        player.src({ src: videoSource.src, type: videoSource.type });
+        player.play();
+
+        player.one('ended', function() {
+          isWinVideoNext = !isWinVideoNext;
+          playNextVideo();
+        });
+      }
     });
+
 </script>
 </body>
 </html>
