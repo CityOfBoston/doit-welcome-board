@@ -21,9 +21,20 @@
       overflow: hidden;
   }
 
-  #video-container {
+  /* for use with videoJS player
+   #video-container {
             height: 100%;
             border: none;
+        } */
+        #video-container {
+            height: 100%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 5em;
+            font-weight: 500;
         }
 
         .video-js {
@@ -41,10 +52,11 @@
 </head>
 
 <div id="video-container">
-  <video id="my_video_1" class="video-js vjs-default-skin" autoplay muted controls preload="auto" loop></video>
+  Welcome to the Department of Innovation and Technology!
+  <!-- <video id="my_video_1" class="video-js vjs-default-skin" autoplay muted controls preload="auto" loop></video> -->
 </div>
 
-<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<!-- <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const videoContainer = 'my_video_1'
@@ -123,6 +135,6 @@
 
       initializeVideoPlayback();
     });
-</script>
+</script> -->
 </body>
 </html>
