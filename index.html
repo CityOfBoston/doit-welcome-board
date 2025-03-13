@@ -1,150 +1,81 @@
-<!--
-  Don't use the "5-unsafe" CDN version in your own code. It will break on you. 
-  Instead go to videojs.com and copy the CDN urls for the latest version.
--->
 
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
-  <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
-<style>
-  body {
-      background: #091F2F;
-      text-align: center;
-      color: #E0E0E0;
-      /* height: 93.5%; */
-      margin: 0;
-      /* padding: 2em; */
-      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    #full-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-  
-
-  /* for use with videoJS player
-   #video-container {
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotating Power BI & Images</title>
+    <style>
+        #displayContainer {
+            /* will likely need to play with this on the screen */
+            height: 100vh;
+            border: 2px solid #ccc;
+        }
+        iframe, img {
+            width: 100%;
             height: 100%;
-            border: none;
-        } */
-        #full-image {
-          display:block;
-          /* width: 100vw; */
-          height: 100vh;
-          object-fit: cover;
-          align-items: center;
         }
-
-        .video-js {
-            height: 100% !important;
-            width: 100% !important;
-            border: none;
-        }
-
-        .vjs-fullscreen .vjs-tech {
-          border: none;
-        }
-
-
-</style>
+    </style>
 </head>
 <body>
-  <img id="full-image" src="https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/welcomeSignTV.jpg" alt=" Welcome to the Department of Innovation and Technology!">
-</body>
-<!-- <div id="video-container"> -->
- 
-  <!-- <video id="my_video_1" class="video-js vjs-default-skin" autoplay muted controls preload="auto" loop></video> -->
-<!-- </div> -->
 
-<!-- <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const videoContainer = 'my_video_1'
-        const repoOwner = 'CityOfBoston';
-        const repoName = 'doit-welcome-board';
-        const winFolderPath = 'wins';
-        const transitionFolderPath = 'transitions'
-        
-        const state = {
-        winVideos: [],
-        transitionVideos: [],
-        currentWinIndex: 0,
-        currentTransitionIndex: 0,
-        isWinVideoNext: true
-        };
 
-        const player = videojs(videoContainer, { controls: false, autoplay: true, muted: true, loop: false, inactivityTimeout: 0 });
+        <div id="displayContainer"></div>
 
-        const fetchVideoFiles = async (folderPath) => {
-        try {
-          const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${folderPath}`);
-          const data = await response.json();
+        <script>
+            // Separate lists for Power BI dashboards and images with alt text
+            const powerBiLinks = [
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiOGYyODlhMzMtOTRhNi00NGQ3LWFiNjgtYWJjNGJjNTYyYjcwIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Analytics Team Dashboard" },
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiMWVmMDdjYmMtYjM0YS00YTAwLTkzZGQtMmYxY2I1MGYxMGVkIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Cable and Digital Equity Dashboard" },
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiMGViZDI0NzAtNDYzNi00NWViLTkyYjgtN2YxZjcyZjUxYmIzIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Department Wide Measures Dashboard"},
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiZDQzZGQ2ZDMtNGQzYy00ZTdiLWE3YzktZmEzOGU4YmI2YjNlIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Digital Team Dashboard"},
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiNWY3ZDExZmQtYTAxYS00ZTE1LWEzZGQtNzFiOTE5ZTU0MGIwIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Enterprise Applications Team Dashboard"},
+                { primary: "https://app.powerbigov.us/view?r=eyJrIjoiOWJmYjE2YjMtMzQyZi00OTE2LWFiMzgtMTEwMzRmY2U0MTQyIiwidCI6Ijg1NTI4ODdjLWNiYzMtNGVlNS05ZmQzLWVhMjE3ZTMwMjZmYyJ9", altText: "Cybersecurity Team Dashboard"}
+    
+                // { primary: "YOUR_POWER_BI_EMBED_URL_3", altText: "Power BI Dashboard 3" }
+            ];
+            
+            const imageLinks = [
+                { primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/welcomeSignTV.jpg", altText: "Welcome to the Department of Innovation and Technology!" },
+                //  { primary: "your-image2.jpg", altText: "Description of Image 2" },
+                // { primary: "your-image3.jpg", altText: "Description of Image 3" }
+            ];
+            
+            let currentType = "powerbi"; // Track if showing Power BI or image first
+            const container = document.getElementById("displayContainer");
+    
+            function getRandomItem(array) {
+              // selecting a random value to choose next from dashboards and images (switching each time)
+                return array[Math.floor(Math.random() * array.length)];
+            }
+    
+            function updateDisplay() {
+                container.innerHTML = ""; // Clear previous content
+                const item = getRandomItem(currentType === "powerbi" ? powerBiLinks : imageLinks);
+    
+                if (currentType === "powerbi") {
+                    const iframe = document.createElement("iframe");
+                    iframe.src = item.primary;
+                    iframe.frameBorder = "0";
+                    iframe.allowFullscreen = true;
+                    iframe.setAttribute("title", item.altText); // Adding screen reader accessible title
+                    container.appendChild(iframe);
+                    currentType = "image"; // Next switch to image
+                } else {
+                    const img = document.createElement("img");
+                    img.src = item.primary;
+                    img.alt = item.altText; // Adding screen reader accessible alt text
+                    container.appendChild(img);
+                    currentType = "powerbi"; // Next switch to Power BI
+                }
+            }
+    
+            // Initial display
+            updateDisplay();
+    
+            // Rotate every 10 seconds (adjust as needed)
+            setInterval(updateDisplay, 10000);
+        </script>
 
-          return data
-            .filter(file => file.type === 'file' && (file.name.endsWith('.mp4') || file.name.endsWith('.webm')))
-            .map(file => ({
-              src: file.download_url,
-              type: `video/${file.name.split('.').pop()}`
-            }));
-        } catch (error) {
-          console.error(`Error fetching video files from ${folderPath}:`, error);
-          return [];
-        }
-      };
-
-      const shuffleArray = (array) => array.sort(() => Math.random() - 0.5);
-
-      const playNextVideo = () => {
-        const { isWinVideoNext, winVideos, transitionVideos } = state;
-        let videoSources = isWinVideoNext ? winVideos : transitionVideos;
-        let currentIndex = isWinVideoNext ? state.currentWinIndex : state.currentTransitionIndex;
-
-        if (videoSources.length === 0) {
-          console.error('No video sources available.');
-          return;
-        }
-
-        const videoSource = videoSources[currentIndex];
-        player.src({ src: videoSource.src, type: videoSource.type });
-        player.play();
-
-        // Update the current index and shuffle if necessary
-        if (isWinVideoNext) {
-          state.currentWinIndex = (state.currentWinIndex + 1) % winVideos.length;
-          if (state.currentWinIndex === 0) {
-            state.winVideos = shuffleArray(winVideos);
-          }
-        } else {
-          state.currentTransitionIndex = (state.currentTransitionIndex + 1) % transitionVideos.length;
-          if (state.currentTransitionIndex === 0) {
-            state.transitionVideos = shuffleArray(transitionVideos);
-          }
-        }
-
-        // Toggle for next video
-        state.isWinVideoNext = !isWinVideoNext;
-        player.one('ended', playNextVideo);
-      };
-
-      const initializeVideoPlayback = async () => {
-        state.winVideos = shuffleArray(await fetchVideoFiles(winFolderPath));
-        state.transitionVideos = shuffleArray(await fetchVideoFiles(transitionFolderPath));
-
-        playNextVideo();
-      };
-
-      initializeVideoPlayback();
-    });
-</script> -->
 </body>
 </html>
