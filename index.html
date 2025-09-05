@@ -169,14 +169,13 @@
         async function getPredictions(route, stop, direction) { const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&page[limit]=3`; try { const response = await fetch(url); if (!response.ok) throw new Error(`API call failed: ${response.status}`); const data = await response.json(); return data.data || []; } catch (error) { console.error(`Error fetching MBTA data for ${route} at ${stop}:`, error); return []; } }
         
         async function updateLiveTransitData() {
-            // CORRECTED: Green Line stop ID is now the specific ID for the Westbound platform (70201)
             const lines = [
                 { id: 'blue-line', route: 'Blue', stop: 'place-gover', direction: 0 },
                 { id: 'red-line', route: 'Red', stop: 'place-pktrm', direction: 1 },
                 { id: 'orange-line', route: 'Orange', stop: 'place-state', direction: 1 },
-                { id: 'green-b-line', route: 'Green-B', stop: '70201', direction: 0 },
-                { id: 'green-c-line', route: 'Green-C', stop: '70201', direction: 0 },
-                { id: 'green-e-line', route: 'Green-E', stop: '70201', direction: 0 }
+                { id: 'green-b-line', route: 'Green-B', stop: 'place-gover', direction: 0 },
+                { id: 'green-c-line', route: 'Green-C', stop: 'place-gover', direction: 0 },
+                { id: 'green-e-line', route: 'Green-E', stop: 'place-gover', direction: 0 }
             ];
             await Promise.all(lines.map(async (line) => {
                 const predictions = await getPredictions(line.route, line.stop, line.direction);
