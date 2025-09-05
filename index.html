@@ -182,17 +182,25 @@
                 
                 // Console log Green Line data for debugging
                 if (line.id.includes('green')) {
-                    console.log(`=== ${line.id} (${line.route}) ===`);
+                    console.log(`=== ${line.id} (${line.route}) API URL ===`);
+                    console.log(`https://api-v3.mbta.com/predictions?filter[route]=${line.route}&filter[stop]=${line.stop}&filter[direction_id]=${line.direction}&page[limit]=3`);
                     console.log('Raw predictions:', predictions);
                     console.log('Prediction count:', predictions?.length || 0);
                     if (predictions && predictions.length > 0) {
                         predictions.forEach((pred, index) => {
+                            const arrivalTime = pred.attributes.arrival_time || pred.attributes.departure_time;
+                            const now = new Date();
+                            const arrival = new Date(arrivalTime);
+                            const diffMin = Math.floor((arrival - now) / 60000);
+                            
                             console.log(`Prediction ${index + 1}:`, {
                                 arrival_time: pred.attributes.arrival_time,
                                 departure_time: pred.attributes.departure_time,
                                 direction_id: pred.attributes.direction_id,
                                 stop_id: pred.relationships?.stop?.data?.id,
-                                route_id: pred.relationships?.route?.data?.id
+                                route_id: pred.relationships?.route?.data?.id,
+                                calculated_minutes: diffMin,
+                                raw_time_used: arrivalTime
                             });
                         });
                     }
