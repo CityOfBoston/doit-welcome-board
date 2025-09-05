@@ -179,6 +179,25 @@
             ];
             await Promise.all(lines.map(async (line) => {
                 const predictions = await getPredictions(line.route, line.stop, line.direction);
+                
+                // Console log Green Line data for debugging
+                if (line.id.includes('green')) {
+                    console.log(`=== ${line.id} (${line.route}) ===`);
+                    console.log('Raw predictions:', predictions);
+                    console.log('Prediction count:', predictions?.length || 0);
+                    if (predictions && predictions.length > 0) {
+                        predictions.forEach((pred, index) => {
+                            console.log(`Prediction ${index + 1}:`, {
+                                arrival_time: pred.attributes.arrival_time,
+                                departure_time: pred.attributes.departure_time,
+                                direction_id: pred.attributes.direction_id,
+                                stop_id: pred.relationships?.stop?.data?.id,
+                                route_id: pred.relationships?.route?.data?.id
+                            });
+                        });
+                    }
+                }
+                
                 const timeEl = document.getElementById(`${line.id}-times`);
                 if (predictions && predictions.length > 0) {
                     predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time));
