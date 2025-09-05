@@ -101,7 +101,6 @@
             <svg id="refresh-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
             </svg>
-            <!-- This span no longer has a fixed width, allowing the parent to center it properly. -->
             <span id="refresh-badge">Starting...</span>
         </div>
     </div>
@@ -128,8 +127,8 @@
                 <!-- Panel 2: Green Lines -->
                 <div id="transit-data-green" class="space-y-1 transit-panel">
                     <div class="rounded-md p-2 border" style="background-color: #F9FAFB; border-color: #d1d5db;"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><span class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: #00843D;"></span><div><h3 class="font-medium" style="color: #004b24; font-size: 15px;">Green Line (B)</h3><p style="font-weight: 500; font-size: 13px; color: #6c6c6c;">Govt Ctr → Boston College</p></div></div><div class="text-right"><span id="green-b-line-times" class="font-bold" style="color: #333333; font-size: 1rem;">Loading...</span></div></div></div>
-                    <div class="rounded-md p-2 border" style="background-color: #F9FAFB; border-color: #d1d5db;"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><span class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: #00843D;"></span><div><h3 class="font-medium" style="color: #004b24; font-size: font-size: 15px;">Green Line (C)</h3><p style="font-weight: 500; font-size: 13px; color: #6c6c6c;">Govt Ctr → Cleveland Circle</p></div></div><div class="text-right"><span id="green-c-line-times" class="font-bold" style="color: #333333; font-size: 1rem;">Loading...</span></div></div></div>
-                    <div class="rounded-md p-2 border" style="background-color: #F9FAFB; border-color: #d1d5db;"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><span class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: #00843D;"></span><div><h3 class="font-medium" style="color: #004b24; font-size: font-size: 15px;">Green Line (E)</h3><p style="font-weight: 500; font-size: 13px; color: #6c6c6c;">Govt Ctr → Heath St</p></div></div><div class="text-right"><span id="green-e-line-times" class="font-bold" style="color: #333333; font-size: 1rem;">Loading...</span></div></div></div>
+                    <div class="rounded-md p-2 border" style="background-color: #F9FAFB; border-color: #d1d5db;"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><span class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: #00843D;"></span><div><h3 class="font-medium" style="color: #004b24; font-size: 15px;">Green Line (C)</h3><p style="font-weight: 500; font-size: 13px; color: #6c6c6c;">Govt Ctr → Cleveland Circle</p></div></div><div class="text-right"><span id="green-c-line-times" class="font-bold" style="color: #333333; font-size: 1rem;">Loading...</span></div></div></div>
+                    <div class="rounded-md p-2 border" style="background-color: #F9FAFB; border-color: #d1d5db;"><div class="flex items-center justify-between"><div class="flex items-center gap-3"><span class="h-3 w-3 rounded-full flex-shrink-0" style="background-color: #00843D;"></span><div><h3 class="font-medium" style="color: #004b24; font-size: 15px;">Green Line (E)</h3><p style="font-weight: 500; font-size: 13px; color: #6c6c6c;">Govt Ctr → Heath St</p></div></div><div class="text-right"><span id="green-e-line-times" class="font-bold" style="color: #333333; font-size: 1rem;">Loading...</span></div></div></div>
                 </div>
             </div>
         </div>
@@ -162,11 +161,29 @@
         
         const MASTER_REFRESH_SECONDS = 20;
         const TRANSIT_SWITCH_SECONDS = 10;
+        const MBTA_API_KEY = 'ec5c0e06114d498ab788b12888f05df2'; // Your API Key
         
         let isInitialLoad = true;
 
         function formatTime(arrivalTime) { if (!arrivalTime) return null; const now = new Date(); const arrival = new Date(arrivalTime); const diffSeconds = Math.round((arrival - now) / 1000); if (diffSeconds < 0) return null; if (diffSeconds < 60) return 'Arr'; const diffMin = Math.ceil(diffSeconds / 60); return `${diffMin} min`; }
-        async function getPredictions(route, stop, direction) { const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&page[limit]=3`; try { const response = await fetch(url); if (!response.ok) throw new Error(`API call failed: ${response.status}`); const data = await response.json(); return data.data || []; } catch (error) { console.error(`Error fetching MBTA data for ${route} at ${stop}:`, error); return []; } }
+        
+        async function getPredictions(route, stop, direction) { 
+            const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&page[limit]=3`; 
+            try { 
+                const response = await fetch(url, {
+                    headers: {
+                        'x-api-key': MBTA_API_KEY,
+                        'Accept': 'application/json'
+                    }
+                }); 
+                if (!response.ok) throw new Error(`API call failed: ${response.status}`); 
+                const data = await response.json(); 
+                return data.data || []; 
+            } catch (error) { 
+                console.error(`Error fetching MBTA data for ${route} at ${stop}:`, error); 
+                return []; 
+            } 
+        }
         
         async function updateLiveTransitData() {
             const lines = [
@@ -180,32 +197,6 @@
             await Promise.all(lines.map(async (line) => {
                 const predictions = await getPredictions(line.route, line.stop, line.direction);
                 
-                // Console log Green Line data for debugging
-                if (line.id.includes('green')) {
-                    console.log(`=== ${line.id} (${line.route}) API URL ===`);
-                    console.log(`https://api-v3.mbta.com/predictions?filter[route]=${line.route}&filter[stop]=${line.stop}&filter[direction_id]=${line.direction}&page[limit]=3`);
-                    console.log('Raw predictions:', predictions);
-                    console.log('Prediction count:', predictions?.length || 0);
-                    if (predictions && predictions.length > 0) {
-                        predictions.forEach((pred, index) => {
-                            const arrivalTime = pred.attributes.arrival_time || pred.attributes.departure_time;
-                            const now = new Date();
-                            const arrival = new Date(arrivalTime);
-                            const diffMin = Math.floor((arrival - now) / 60000);
-                            
-                            console.log(`Prediction ${index + 1}:`, {
-                                arrival_time: pred.attributes.arrival_time,
-                                departure_time: pred.attributes.departure_time,
-                                direction_id: pred.attributes.direction_id,
-                                stop_id: pred.relationships?.stop?.data?.id,
-                                route_id: pred.relationships?.route?.data?.id,
-                                calculated_minutes: diffMin,
-                                raw_time_used: arrivalTime
-                            });
-                        });
-                    }
-                }
-                
                 const timeEl = document.getElementById(`${line.id}-times`);
                 if (predictions && predictions.length > 0) {
                     predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time));
@@ -217,7 +208,46 @@
             }));
         }
 
-        async function updateBikeshareData() { const cityHallStationIds = ['B32008', 'D32009', 'B32032']; try { const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); const gbfsData = await gbfsResponse.json(); const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); const infoData = await infoResponse.json(); const statusData = await statusResponse.json(); const stationNames = {}; infoData.data.stations.forEach(station => { if (cityHallStationIds.includes(station.short_name)) { stationNames[station.short_name] = station.name; } }); const stationStatuses = {}; infoData.data.stations.forEach(stationInfo => { const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); if (status && cityHallStationIds.includes(stationInfo.short_name)) { stationStatuses[stationInfo.short_name] = status; } }); cityHallStationIds.forEach((stationId, index) => { const name = stationNames[stationId]; const status = stationStatuses[stationId]; if (name && status) { const ebikes = status.num_ebikes_available || 0; const classicBikes = (status.num_bikes_available || 0) - ebikes; const docks = status.num_docks_available || 0; document.getElementById(`station-name-${index}`).textContent = name; document.getElementById(`station-classic-${index}`).textContent = classicBikes; document.getElementById(`station-ebike-${index}`).textContent = ebikes; document.getElementById(`station-docks-${index}`).textContent = docks; } }); } catch (error) { console.error("Error fetching Bluebikes data:", error); } }
+        async function updateBikeshareData() { 
+            const cityHallStationIds = ['B32008', 'D32009', 'B32032']; 
+            try { 
+                const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); 
+                const gbfsData = await gbfsResponse.json(); 
+                const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; 
+                const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; 
+                const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); 
+                const infoData = await infoResponse.json(); 
+                const statusData = await statusResponse.json(); 
+                const stationNames = {}; 
+                infoData.data.stations.forEach(station => { 
+                    if (cityHallStationIds.includes(station.short_name)) { 
+                        stationNames[station.short_name] = station.name; 
+                    } 
+                }); 
+                const stationStatuses = {}; 
+                infoData.data.stations.forEach(stationInfo => { 
+                    const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); 
+                    if (status && cityHallStationIds.includes(stationInfo.short_name)) { 
+                        stationStatuses[stationInfo.short_name] = status; 
+                    } 
+                }); 
+                cityHallStationIds.forEach((stationId, index) => { 
+                    const name = stationNames[stationId]; 
+                    const status = stationStatuses[stationId]; 
+                    if (name && status) { 
+                        const ebikes = status.num_ebikes_available || 0; 
+                        const classicBikes = (status.num_bikes_available || 0) - ebikes; 
+                        const docks = status.num_docks_available || 0; 
+                        document.getElementById(`station-name-${index}`).textContent = name; 
+                        document.getElementById(`station-classic-${index}`).textContent = classicBikes; 
+                        document.getElementById(`station-ebike-${index}`).textContent = ebikes; 
+                        document.getElementById(`station-docks-${index}`).textContent = docks; 
+                    } 
+                }); 
+            } catch (error) { 
+                console.error("Error fetching Bluebikes data:", error); 
+            } 
+        }
         
         async function updateAllData() {
             const refreshIcon = document.getElementById('refresh-icon');
