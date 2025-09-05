@@ -161,7 +161,7 @@
         
         const MASTER_REFRESH_SECONDS = 20;
         const TRANSIT_SWITCH_SECONDS = 10;
-        const MBTA_API_KEY = 'ec5c0e06114d498ab788b12888f05df2'; // Your API Key
+        const MBTA_API_KEY = 'ec5c0e06114d498ab788b12888f05df2';
         
         let isInitialLoad = true;
 
@@ -171,10 +171,7 @@
             const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&page[limit]=3`; 
             try { 
                 const response = await fetch(url, {
-                    headers: {
-                        'x-api-key': MBTA_API_KEY,
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'x-api-key': MBTA_API_KEY }
                 }); 
                 if (!response.ok) throw new Error(`API call failed: ${response.status}`); 
                 const data = await response.json(); 
@@ -197,6 +194,32 @@
             await Promise.all(lines.map(async (line) => {
                 const predictions = await getPredictions(line.route, line.stop, line.direction);
                 
+                // === CONSOLE LOGS RESTORED ===
+                if (line.id.includes('green')) {
+                    console.log(`=== ${line.id} (${line.route}) API URL ===`);
+                    console.log(`https://api-v3.mbta.com/predictions?filter[route]=${line.route}&filter[stop]=${line.stop}&filter[direction_id]=${line.direction}&page[limit]=3`);
+                    console.log('Raw predictions:', predictions);
+                    console.log('Prediction count:', predictions?.length || 0);
+                    if (predictions && predictions.length > 0) {
+                        predictions.forEach((pred, index) => {
+                            const arrivalTime = pred.attributes.arrival_time || pred.attributes.departure_time;
+                            const now = new Date();
+                            const arrival = new Date(arrivalTime);
+                            const diffMin = Math.floor((arrival - now) / 60000);
+                            
+                            console.log(`Prediction ${index + 1}:`, {
+                                arrival_time: pred.attributes.arrival_time,
+                                departure_time: pred.attributes.departure_time,
+                                direction_id: pred.attributes.direction_id,
+                                stop_id: pred.relationships?.stop?.data?.id,
+                                route_id: pred.relationships?.route?.data?.id,
+                                calculated_minutes: diffMin,
+                                raw_time_used: arrivalTime
+                            });
+                        });
+                    }
+                }
+                
                 const timeEl = document.getElementById(`${line.id}-times`);
                 if (predictions && predictions.length > 0) {
                     predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time));
@@ -208,46 +231,7 @@
             }));
         }
 
-        async function updateBikeshareData() { 
-            const cityHallStationIds = ['B32008', 'D32009', 'B32032']; 
-            try { 
-                const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); 
-                const gbfsData = await gbfsResponse.json(); 
-                const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; 
-                const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; 
-                const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); 
-                const infoData = await infoResponse.json(); 
-                const statusData = await statusResponse.json(); 
-                const stationNames = {}; 
-                infoData.data.stations.forEach(station => { 
-                    if (cityHallStationIds.includes(station.short_name)) { 
-                        stationNames[station.short_name] = station.name; 
-                    } 
-                }); 
-                const stationStatuses = {}; 
-                infoData.data.stations.forEach(stationInfo => { 
-                    const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); 
-                    if (status && cityHallStationIds.includes(stationInfo.short_name)) { 
-                        stationStatuses[stationInfo.short_name] = status; 
-                    } 
-                }); 
-                cityHallStationIds.forEach((stationId, index) => { 
-                    const name = stationNames[stationId]; 
-                    const status = stationStatuses[stationId]; 
-                    if (name && status) { 
-                        const ebikes = status.num_ebikes_available || 0; 
-                        const classicBikes = (status.num_bikes_available || 0) - ebikes; 
-                        const docks = status.num_docks_available || 0; 
-                        document.getElementById(`station-name-${index}`).textContent = name; 
-                        document.getElementById(`station-classic-${index}`).textContent = classicBikes; 
-                        document.getElementById(`station-ebike-${index}`).textContent = ebikes; 
-                        document.getElementById(`station-docks-${index}`).textContent = docks; 
-                    } 
-                }); 
-            } catch (error) { 
-                console.error("Error fetching Bluebikes data:", error); 
-            } 
-        }
+        async function updateBikeshareData() { const cityHallStationIds = ['B32008', 'D32009', 'B32032']; try { const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); const gbfsData = await gbfsResponse.json(); const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); const infoData = await infoResponse.json(); const statusData = await statusResponse.json(); const stationNames = {}; infoData.data.stations.forEach(station => { if (cityHallStationIds.includes(station.short_name)) { stationNames[station.short_name] = station.name; } }); const stationStatuses = {}; infoData.data.stations.forEach(stationInfo => { const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); if (status && cityHallStationIds.includes(stationInfo.short_name)) { stationStatuses[stationInfo.short_name] = status; } }); cityHallStationIds.forEach((stationId, index) => { const name = stationNames[stationId]; const status = stationStatuses[stationId]; if (name && status) { const ebikes = status.num_ebikes_available || 0; const classicBikes = (status.num_bikes_available || 0) - ebikes; const docks = status.num_docks_available || 0; document.getElementById(`station-name-${index}`).textContent = name; document.getElementById(`station-classic-${index}`).textContent = classicBikes; document.getElementById(`station-ebike-${index}`).textContent = ebikes; document.getElementById(`station-docks-${index}`).textContent = docks; } }); } catch (error) { console.error("Error fetching Bluebikes data:", error); } }
         
         async function updateAllData() {
             const refreshIcon = document.getElementById('refresh-icon');
