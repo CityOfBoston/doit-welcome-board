@@ -201,7 +201,7 @@
                 const timeEl = document.getElementById(`${line.id}-times`);
                 if (predictions && predictions.length > 0) {
                     predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time));
-                    const formattedTimes = predictions.map(pred => formatTime(pred.attributes.arrival_time || pred.attributes.departure_time)).filter(time => time !== null).join(', ');
+                    const formattedTimes = predictions.map(pred => formatTime(pred.attributes.arrival_time || pred.attributes.departure_time, line.id)).filter(time => time !== null).join(', ');
                     timeEl.textContent = formattedTimes || 'N/A';
                 } else {
                     timeEl.textContent = 'N/A';
