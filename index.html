@@ -168,7 +168,29 @@
         function formatTime(arrivalTime) { if (!arrivalTime) return null; const now = new Date(); const arrival = new Date(arrivalTime); const diffSeconds = Math.round((arrival - now) / 1000); if (diffSeconds < 0) return null; if (diffSeconds < 60) return 'Arr'; const diffMin = Math.ceil(diffSeconds / 60); return `${diffMin} min`; }
         async function getPredictions(route, stop, direction) { const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&page[limit]=3`; try { const response = await fetch(url); if (!response.ok) throw new Error(`API call failed: ${response.status}`); const data = await response.json(); return data.data || []; } catch (error) { console.error(`Error fetching MBTA data for ${route} at ${stop}:`, error); return []; } }
         
-        async function updateLiveTransitData() { const lines = [ { id: 'blue-line', route: 'Blue', stop: 'place-gover', direction: 0 }, { id: 'red-line', route: 'Red', stop: 'place-pktrm', direction: 1 }, { id: 'orange-line', route: 'Orange', stop: 'place-state', direction: 1 }, { id: 'green-b-line', route: 'Green-B', stop: 'place-gover', direction: 0 }, { id: 'green-c-line', route: 'Green-C', stop: 'place-gover', direction: 0 }, { id: 'green-e-line', route: 'Green-E', stop: 'place-gover', direction: 0 } ]; await Promise.all(lines.map(async (line) => { const predictions = await getPredictions(line.route, line.stop, line.direction); const timeEl = document.getElementById(`${line.id}-times`); if (predictions && predictions.length > 0) { predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time)); const formattedTimes = predictions.map(pred => formatTime(pred.attributes.arrival_time || pred.attributes.departure_time)).filter(time => time !== null).join(', '); timeEl.textContent = formattedTimes || 'N/A'; } else { timeEl.textContent = 'N/A'; } })); }
+        async function updateLiveTransitData() {
+            // CORRECTED: Green Line stop ID is now the specific ID for the Westbound platform (70201)
+            const lines = [
+                { id: 'blue-line', route: 'Blue', stop: 'place-gover', direction: 0 },
+                { id: 'red-line', route: 'Red', stop: 'place-pktrm', direction: 1 },
+                { id: 'orange-line', route: 'Orange', stop: 'place-state', direction: 1 },
+                { id: 'green-b-line', route: 'Green-B', stop: '70201', direction: 0 },
+                { id: 'green-c-line', route: 'Green-C', stop: '70201', direction: 0 },
+                { id: 'green-e-line', route: 'Green-E', stop: '70201', direction: 0 }
+            ];
+            await Promise.all(lines.map(async (line) => {
+                const predictions = await getPredictions(line.route, line.stop, line.direction);
+                const timeEl = document.getElementById(`${line.id}-times`);
+                if (predictions && predictions.length > 0) {
+                    predictions.sort((a, b) => new Date(a.attributes.arrival_time || a.attributes.departure_time) - new Date(b.attributes.arrival_time || b.attributes.departure_time));
+                    const formattedTimes = predictions.map(pred => formatTime(pred.attributes.arrival_time || pred.attributes.departure_time)).filter(time => time !== null).join(', ');
+                    timeEl.textContent = formattedTimes || 'N/A';
+                } else {
+                    timeEl.textContent = 'N/A';
+                }
+            }));
+        }
+
         async function updateBikeshareData() { const cityHallStationIds = ['B32008', 'D32009', 'B32032']; try { const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); const gbfsData = await gbfsResponse.json(); const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); const infoData = await infoResponse.json(); const statusData = await statusResponse.json(); const stationNames = {}; infoData.data.stations.forEach(station => { if (cityHallStationIds.includes(station.short_name)) { stationNames[station.short_name] = station.name; } }); const stationStatuses = {}; infoData.data.stations.forEach(stationInfo => { const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); if (status && cityHallStationIds.includes(stationInfo.short_name)) { stationStatuses[stationInfo.short_name] = status; } }); cityHallStationIds.forEach((stationId, index) => { const name = stationNames[stationId]; const status = stationStatuses[stationId]; if (name && status) { const ebikes = status.num_ebikes_available || 0; const classicBikes = (status.num_bikes_available || 0) - ebikes; const docks = status.num_docks_available || 0; document.getElementById(`station-name-${index}`).textContent = name; document.getElementById(`station-classic-${index}`).textContent = classicBikes; document.getElementById(`station-ebike-${index}`).textContent = ebikes; document.getElementById(`station-docks-${index}`).textContent = docks; } }); } catch (error) { console.error("Error fetching Bluebikes data:", error); } }
         
         async function updateAllData() {
@@ -213,7 +235,7 @@
                     lastUpdatedString = `Updated at ${await updateAllData()}`;
                     refreshCountdown = MASTER_REFRESH_SECONDS;
                 }
-                if (transitSwitchCountdown <= 0) {
+                if ( transitSwitchCountdown <= 0) {
                     isPrimaryTransitVisible = !isPrimaryTransitVisible;
                     primaryTransitPanel.classList.toggle('active', isPrimaryTransitVisible);
                     greenTransitPanel.classList.toggle('active', !isPrimaryTransitVisible);
