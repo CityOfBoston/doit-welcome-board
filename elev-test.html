@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
+    <title>City of Boston Department Display - Portrait</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            font-family: Inter, -apple-system, "system-ui", "Segoe UI", Helvetica, Arial, sans-serif;
+            overflow: hidden; 
+            /* Enforce 1080x1920 Resolution */
+            width: 1080px;
+            height: 1920px;
+            background-color: #e5f2ff;
+            margin: 0;
+            padding: 40px; /* Increased padding for large screen */
+        }
+        
+        .panel-shadow {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+
+        #transit-cycler {
+            display: grid;
+            height: 100%;
+        }
+        .transit-panel {
+            grid-area: 1 / 1;
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            opacity: 0;
+            transform: translateY(25px);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly; /* Distribute items to fill height */
+        }
+        .transit-panel.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        .rotating {
+            animation: spin 1.2s linear;
+            transform-origin: center;
+        }
+
+        /* Utility to hide scrollbars if content overflows slightly */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="flex flex-col gap-8">
+    
+    <!-- Header / Status Bar -->
+    <div class="flex items-center justify-between mb-2">
+        <h1 class="text-4xl font-bold text-slate-800">Transportation Status</h1>
+        
+        <div class="flex items-center gap-4">
+            <!-- Badge 1: Updated Status -->
+            <div class="inline-flex items-center justify-center bg-white text-gray-800 font-semibold px-5 py-3 rounded-xl border border-gray-300 shadow-sm">
+                <span id="update-badge" class="text-2xl">Initializing...</span>
+            </div>
+
+            <!-- Badge 2: Refresh Countdown -->
+            <div class="inline-flex items-center justify-center bg-white text-gray-800 font-semibold px-5 py-3 rounded-xl border border-gray-300 shadow-sm w-64">
+                <svg id="refresh-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                </svg>
+                <span id="refresh-badge" class="text-2xl">Starting...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT STACK -->
+    <div class="flex flex-col gap-8 flex-grow h-full">
+        
+        <!-- PANEL 1: MBTA TRANSIT -->
+        <div id="transitBlock" class="rounded-3xl p-8 flex flex-col panel-shadow bg-white flex-1 h-[48%]">
+            <div class="flex-shrink-0 mb-6 border-b-2 border-gray-200 pb-6">
+                 <div class="flex justify-between items-center">
+                    <h2 class="font-bold text-gray-800 text-5xl">MBTA Near City Hall</h2>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/MBTA.svg" alt="MBTA Logo" class="h-16 w-auto">
+                 </div>
+            </div>
+            
+            <div id="transit-cycler" class="flex-grow pt-2 relative">
+                <!-- Panel 1: Blue, Red, Orange -->
+                <div id="transit-data-primary" class="transit-panel w-full h-full absolute top-0 left-0">
+                    <!-- Blue -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-blue-500 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-blue-900 text-4xl mb-1">Blue Line</h3>
+                                <p class="font-medium text-gray-500 text-2xl">Government Center → Wonderland</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="blue-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- Red -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-red-500 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-blue-900 text-4xl mb-1">Red Line</h3>
+                                <p class="font-medium text-gray-500 text-2xl">Park St → Ashmont</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="red-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- Orange -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-orange-500 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-blue-900 text-4xl mb-1">Orange Line</h3>
+                                <p class="font-medium text-gray-500 text-2xl">State St → Forest Hills</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="orange-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel 2: Green Lines -->
+                <div id="transit-data-green" class="transit-panel w-full h-full absolute top-0 left-0">
+                    <!-- Green B -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-green-600 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-green-900 text-4xl mb-1">Green Line (B)</h3>
+                                <p class="font-medium text-gray-500 text-2xl">Gov Ctr → Boston College</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="green-b-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- Green C -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-green-600 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-green-900 text-4xl mb-1">Green Line (C)</h3>
+                                <p class="font-medium text-gray-500 text-2xl">Gov Ctr → Cleveland Circle</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="green-c-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                    <!-- Green E -->
+                    <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 flex items-center justify-between shadow-sm h-[30%]">
+                        <div class="flex items-center gap-6">
+                            <span class="h-12 w-12 rounded-full flex-shrink-0 bg-green-600 shadow-md"></span>
+                            <div>
+                                <h3 class="font-bold text-green-900 text-4xl mb-1">Green Line (E)</h3>
+                                <p class="font-medium text-gray-500 text-2xl">Gov Ctr → Heath St</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span id="green-e-line-times" class="font-bold text-gray-800 text-4xl">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PANEL 2: REAL-TIME BLUEBIKES -->
+        <div id="bikeshareBlock" class="rounded-3xl p-8 flex flex-col panel-shadow bg-white flex-1 h-[48%]">
+            <div class="flex-shrink-0 mb-6 border-b-2 border-gray-200 pb-6">
+                 <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes Logo" class="h-12 w-auto">
+                        <span class="font-bold text-gray-800 text-5xl">Near City Hall</span>
+                    </div>
+                    <img src="https://assets.boston.gov/icons/dept_icons/boston_bikes_icon.svg" alt="Boston Bikes Logo" class="h-16 w-auto">
+                 </div>
+            </div>
+            
+            <div id="bikeshare-data-container" class="flex-grow flex flex-col justify-between pt-2">
+                <!-- Station 1 -->
+                <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="station-name-0" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <div class="flex items-baseline gap-8 text-center flex-shrink-0">
+                            <div class="w-24"><span id="station-classic-0" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-ebike-0" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-docks-0" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-8 text-center text-gray-500 font-medium">
+                        <div class="w-24 text-xl uppercase tracking-wide">Classic</div>
+                        <div class="w-24 text-xl uppercase tracking-wide flex items-center justify-center gap-1">
+                            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                            </svg> 
+                            Ebikes
+                        </div>
+                        <div class="w-24 text-xl uppercase tracking-wide">Docks</div>
+                    </div>
+                </div>
+
+                <!-- Station 2 -->
+                <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="station-name-1" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <div class="flex items-baseline gap-8 text-center flex-shrink-0">
+                            <div class="w-24"><span id="station-classic-1" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-ebike-1" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-docks-1" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-8 text-center text-gray-500 font-medium">
+                        <div class="w-24 text-xl uppercase tracking-wide">Classic</div>
+                        <div class="w-24 text-xl uppercase tracking-wide flex items-center justify-center gap-1">
+                            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                            </svg> 
+                            Ebikes
+                        </div>
+                        <div class="w-24 text-xl uppercase tracking-wide">Docks</div>
+                    </div>
+                </div>
+
+                <!-- Station 3 -->
+                <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 id="station-name-2" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <div class="flex items-baseline gap-8 text-center flex-shrink-0">
+                            <div class="w-24"><span id="station-classic-2" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-ebike-2" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                            <div class="w-24"><span id="station-docks-2" class="block font-bold text-slate-800 text-5xl">-</span></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-8 text-center text-gray-500 font-medium">
+                        <div class="w-24 text-xl uppercase tracking-wide">Classic</div>
+                        <div class="w-24 text-xl uppercase tracking-wide flex items-center justify-center gap-1">
+                            <svg class="w-5 h-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                            </svg> 
+                            Ebikes
+                        </div>
+                        <div class="w-24 text-xl uppercase tracking-wide">Docks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const MASTER_REFRESH_SECONDS = 20;
+        const TRANSIT_SWITCH_SECONDS = 10;
+        const MBTA_API_KEY = 'ec5c0e06114d498ab788b12888f05df2'; 
+        
+        let isInitialLoad = true;
+        
+        // --- HELPER FUNCTIONS ---
+        function formatPredictionTime(prediction) {
+            const attributes = prediction.attributes;
+            if (attributes.status) {
+                return attributes.status.length > 15 ? 'Delayed' : attributes.status;
+            }
+            const effectiveTime = attributes.arrival_time || attributes.departure_time;
+            if (!effectiveTime) return null;
+            const now = new Date();
+            const arrival = new Date(effectiveTime);
+            const seconds = Math.round((arrival - now) / 1000);
+            if (seconds < 0) return null;
+            if (seconds <= 30) {
+                return 'ARR';
+            }
+            const minutes = Math.round(seconds / 60);
+            return `${minutes} min`;
+        }
+        
+        async function getPredictions(route, stop, direction) { 
+            const url = `https://api-v3.mbta.com/predictions?filter[route]=${route}&filter[stop]=${stop}&filter[direction_id]=${direction}&sort=departure_time&page[limit]=3`; 
+            try { 
+                const response = await fetch(url, {
+                    headers: { 'x-api-key': MBTA_API_KEY }
+                }); 
+                if (!response.ok) throw new Error(`API call failed: ${response.status}`); 
+                const data = await response.json(); 
+                return data.data || []; 
+            } catch (error) { 
+                console.error(`Error fetching MBTA data for ${route} at ${stop}:`, error); 
+                return []; 
+            } 
+        }
+        
+        async function updateLiveTransitData() {
+            const lines = [
+                { id: 'blue-line', route: 'Blue', stop: 'place-gover', direction: 0 },
+                { id: 'red-line', route: 'Red', stop: 'place-pktrm', direction: 1 },
+                { id: 'orange-line', route: 'Orange', stop: 'place-state', direction: 1 },
+                { id: 'green-b-line', route: 'Green-B', stop: 'place-gover', direction: 0 },
+                { id: 'green-c-line', route: 'Green-C', stop: 'place-gover', direction: 0 },
+                { id: 'green-e-line', route: 'Green-E', stop: 'place-gover', direction: 0 }
+            ];
+
+            await Promise.all(lines.map(async (line) => {
+                const predictions = await getPredictions(line.route, line.stop, line.direction);
+                const timeEl = document.getElementById(`${line.id}-times`);
+
+                if (predictions && predictions.length > 0) {
+                    const formattedTimes = predictions
+                        .filter(p => {
+                            if (!p.attributes.departure_time) return false;
+                            const effectiveTime = new Date(p.attributes.arrival_time || p.attributes.departure_time);
+                            if (isNaN(effectiveTime.getTime())) return false;
+                            return (effectiveTime - new Date()) / 1000 >= 0;
+                        })
+                        .map(p => formatPredictionTime(p))
+                        .filter(time => time !== null)
+                        .slice(0, 3) 
+                        .join(', ');
+
+                    timeEl.textContent = formattedTimes || 'N/A';
+                } else {
+                    timeEl.textContent = 'N/A';
+                }
+            }));
+        }
+
+        async function updateBikeshareData() { 
+            const cityHallStationIds = ['B32008', 'D32009', 'B32032']; 
+            try { 
+                const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json'); 
+                const gbfsData = await gbfsResponse.json(); 
+                const stationInfoURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_information').url; 
+                const stationStatusURL = gbfsData.data.en.feeds.find(feed => feed.name === 'station_status').url; 
+                const [infoResponse, statusResponse] = await Promise.all([fetch(stationInfoURL), fetch(stationStatusURL)]); 
+                const infoData = await infoResponse.json(); 
+                const statusData = await statusResponse.json(); 
+                const stationNames = {}; 
+                infoData.data.stations.forEach(station => { 
+                    if (cityHallStationIds.includes(station.short_name)) { stationNames[station.short_name] = station.name; } 
+                }); 
+                const stationStatuses = {}; 
+                infoData.data.stations.forEach(stationInfo => { 
+                    const status = statusData.data.stations.find(s => s.station_id === stationInfo.station_id); 
+                    if (status && cityHallStationIds.includes(stationInfo.short_name)) { stationStatuses[stationInfo.short_name] = status; } 
+                }); 
+                cityHallStationIds.forEach((stationId, index) => { 
+                    const name = stationNames[stationId]; 
+                    const status = stationStatuses[stationId]; 
+                    if (name && status) { 
+                        const ebikes = status.num_ebikes_available || 0; 
+                        const classicBikes = (status.num_bikes_available || 0) - ebikes; 
+                        const docks = status.num_docks_available || 0; 
+                        document.getElementById(`station-name-${index}`).textContent = name; 
+                        document.getElementById(`station-classic-${index}`).textContent = classicBikes; 
+                        document.getElementById(`station-ebike-${index}`).textContent = ebikes; 
+                        document.getElementById(`station-docks-${index}`).textContent = docks; 
+                    } 
+                }); 
+            } catch (error) { 
+                console.error("Error fetching Bluebikes data:", error); 
+            } 
+        }
+        
+        async function updateAllData() {
+            const refreshIcon = document.getElementById('refresh-icon');
+            if (!isInitialLoad) {
+                refreshIcon.classList.add('rotating');
+                refreshIcon.addEventListener('animationend', () => {
+                    refreshIcon.classList.remove('rotating');
+                }, { once: true });
+            }
+            await Promise.all([ updateLiveTransitData(), updateBikeshareData() ]);
+            
+            const updateTime = new Date();
+            if (isInitialLoad) {
+                isInitialLoad = false;
+            }
+            return updateTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+
+        function startMasterClock(initialUpdateTime) {
+            const updateBadgeEl = document.getElementById('update-badge');
+            const refreshBadgeEl = document.getElementById('refresh-badge');
+            const primaryTransitPanel = document.getElementById('transit-data-primary');
+            const greenTransitPanel = document.getElementById('transit-data-green');
+            
+            let lastUpdatedString = `Updated at ${initialUpdateTime}`;
+            let refreshCountdown = MASTER_REFRESH_SECONDS;
+            let transitSwitchCountdown = TRANSIT_SWITCH_SECONDS;
+            let isPrimaryTransitVisible = true;
+            
+            primaryTransitPanel.classList.add('active'); 
+
+            const updateStatusText = () => {
+                updateBadgeEl.textContent = lastUpdatedString;
+                refreshBadgeEl.textContent = `Refreshing in ${refreshCountdown}s`;
+            };
+            updateStatusText();
+            setInterval(async () => {
+                refreshCountdown--;
+                transitSwitchCountdown--;
+                if (refreshCountdown <= 0) {
+                    lastUpdatedString = `Updated at ${await updateAllData()}`;
+                    refreshCountdown = MASTER_REFRESH_SECONDS;
+                }
+                if ( transitSwitchCountdown <= 0) {
+                    isPrimaryTransitVisible = !isPrimaryTransitVisible;
+                    primaryTransitPanel.classList.toggle('active', isPrimaryTransitVisible);
+                    greenTransitPanel.classList.toggle('active', !isPrimaryTransitVisible);
+                    transitSwitchCountdown = TRANSIT_SWITCH_SECONDS;
+                }
+                updateStatusText();
+            }, 1000);
+        }
+
+        async function initializeDashboard() {
+            const initialUpdateTime = await updateAllData();
+            startMasterClock(initialUpdateTime);
+        }
+        initializeDashboard();
+    </script>
+</body>
+</html>
