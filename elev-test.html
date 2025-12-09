@@ -68,8 +68,12 @@
 </head>
 <body class="flex flex-col gap-8">
     
-    <!-- Header / Status Bar -->
-    <!--<div class="flex items-center justify-between mb-2">
+    <!-- 
+      NOTE: Even though this is commented out, the script is now updated
+      to handle missing elements so the dashboard won't crash.
+    -->
+    <!--
+    <div class="flex items-center justify-between mb-2">
         <h1 class="text-4xl font-bold text-slate-800">Transportation Status</h1>
         
         <div class="flex items-center gap-4">
@@ -85,7 +89,7 @@
             </div>
         </div>
     </div>
-    !-->
+    -->
 
     <!-- MAIN CONTENT STACK -->
     <div class="flex flex-col gap-8 flex-grow h-full">
@@ -95,7 +99,8 @@
             <div class="flex-shrink-0 mb-6 border-b-2 border-gray-200 pb-6">
                  <div class="flex justify-between items-center">
                     <h2 class="font-bold text-gray-800 text-5xl">MBTA Near City Hall</h2>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/MBTA.svg" alt="MBTA Logo" class="h-16 w-auto">
+                    <!-- FIXED: Changed w-auto to w-16 and added flex-shrink-0 -->
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/MBTA.svg" alt="MBTA Logo" class="h-16 w-16 flex-shrink-0">
                  </div>
             </div>
             
@@ -204,7 +209,7 @@
                 <!-- Station 1 -->
                 <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 id="station-name-0" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <h3 id="station-name-0" class="font-bold text-blue-900 text-4xl truncate pr-4 max-w-[65%]">Loading...</h3>
                         <div class="flex items-baseline gap-8 text-center flex-shrink-0">
                             <div class="w-24"><span id="station-classic-0" class="block font-bold text-slate-800 text-5xl">-</span></div>
                             <div class="w-24"><span id="station-ebike-0" class="block font-bold text-slate-800 text-5xl">-</span></div>
@@ -226,7 +231,7 @@
                 <!-- Station 2 -->
                 <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 id="station-name-1" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <h3 id="station-name-1" class="font-bold text-blue-900 text-4xl truncate pr-4 max-w-[65%]">Loading...</h3>
                         <div class="flex items-baseline gap-8 text-center flex-shrink-0">
                             <div class="w-24"><span id="station-classic-1" class="block font-bold text-slate-800 text-5xl">-</span></div>
                             <div class="w-24"><span id="station-ebike-1" class="block font-bold text-slate-800 text-5xl">-</span></div>
@@ -248,7 +253,7 @@
                 <!-- Station 3 -->
                 <div class="rounded-2xl p-6 border-2 border-gray-200 bg-gray-50 h-[30%] flex flex-col justify-center shadow-sm">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 id="station-name-2" class="font-bold text-blue-900 text-4xl truncate pr-4">Loading...</h3>
+                        <h3 id="station-name-2" class="font-bold text-blue-900 text-4xl truncate pr-4 max-w-[65%]">Loading...</h3>
                         <div class="flex items-baseline gap-8 text-center flex-shrink-0">
                             <div class="w-24"><span id="station-classic-2" class="block font-bold text-slate-800 text-5xl">-</span></div>
                             <div class="w-24"><span id="station-ebike-2" class="block font-bold text-slate-800 text-5xl">-</span></div>
@@ -385,7 +390,7 @@
         
         async function updateAllData() {
             const refreshIcon = document.getElementById('refresh-icon');
-            if (!isInitialLoad) {
+            if (!isInitialLoad && refreshIcon) {
                 refreshIcon.classList.add('rotating');
                 refreshIcon.addEventListener('animationend', () => {
                     refreshIcon.classList.remove('rotating');
@@ -414,8 +419,8 @@
             primaryTransitPanel.classList.add('active'); 
 
             const updateStatusText = () => {
-                updateBadgeEl.textContent = lastUpdatedString;
-                refreshBadgeEl.textContent = `Refreshing in ${refreshCountdown}s`;
+                if (updateBadgeEl) updateBadgeEl.textContent = lastUpdatedString;
+                if (refreshBadgeEl) refreshBadgeEl.textContent = `Refreshing in ${refreshCountdown}s`;
             };
             updateStatusText();
             setInterval(async () => {
