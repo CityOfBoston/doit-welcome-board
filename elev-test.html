@@ -4,20 +4,18 @@
     <meta charset="UTF-8">
     <title>Bluebikes Simple Display</title>
     <style>
-        /* 1. Basic Reset & Dimensions */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
             width: 1080px;
             height: 1920px;
             overflow: hidden;
-            font-family: Helvetica, Arial, sans-serif; /* Safe fonts */
+            font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             color: #333;
             padding: 60px;
         }
 
-        /* 2. Layout & Typography */
         h1 {
             font-size: 80px;
             margin-bottom: 60px;
@@ -71,13 +69,15 @@
             margin-top: 10px;
         }
 
-        /* Error Message Style */
-        #error-log {
-            color: red;
-            font-size: 24px;
-            margin-top: 20px;
+        /* Debug Log for BrightSign Troubleshooting */
+        #debug-log {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            color: #555;
+            margin-top: 50px;
             white-space: pre-wrap;
-            display: none;
+            border-top: 1px solid #ccc;
+            padding-top: 20px;
         }
     </style>
 </head>
@@ -86,124 +86,157 @@
     <h1>Bluebikes Availability</h1>
     
     <div id="app">
-        <div style="text-align:center; font-size: 40px; color: #666;">
-            Loading data...
-        </div>
+        <!-- Data will render here -->
     </div>
 
-    <!-- Error container for debugging on screen -->
-    <div id="error-log"></div>
+    <!-- On-screen logs to help diagnose why it isn't loading -->
+    <div id="debug-log">Initializing...</div>
 
     <script>
-        // --- 1. ERROR HANDLING UTILITY ---
-        // This ensures if the script crashes, you see WHY on the screen.
-        function showError(msg) {
-            const errDiv = document.getElementById('error-log');
-            const appDiv = document.getElementById('app');
-            appDiv.innerHTML = '<div style="text-align:center; font-size:40px; color:red;">Data Load Failed</div>';
-            errDiv.style.display = 'block';
-            errDiv.textContent = 'Debug Info: ' + msg;
+        // --- CONFIGURATION ---
+        var TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
+
+        // --- HELPER: LOGGING ---
+        function log(msg) {
+            var el = document.getElementById('debug-log');
+            el.innerHTML += '<br>' + msg;
+            console.log(msg);
         }
 
-        window.onerror = function(message, source, lineno, colno, error) {
-            showError(message + " at line " + lineno);
-        };
+        // --- HELPER: OLD SCHOOL AJAX REQUEST (No Fetch/Promises) ---
+        function getJSON(url, successCallback, errorCallback) {
+            var xhr = new XMLHttpRequest();
+            // Add random number to URL to force BrightSign not to cache
+            var cacheBuster = (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + new Date().getTime();
+            
+            xhr.open('GET', url + cacheBuster, true);
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) { // Done
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            successCallback(data);
+                        } catch (e) {
+                            errorCallback("JSON Parse Error on " + url);
+                        }
+                    } else {
+                        errorCallback("HTTP Error " + xhr.status + " on " + url);
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                errorCallback("Network Error (Check DNS/Internet) on " + url);
+            };
+            
+            xhr.send();
+        }
 
-        // --- 2. CONFIGURATION ---
-        const TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
+        // --- HELPER: FIND ARRAY ITEM (Polyfill for older browsers) ---
+        function findStation(list, key, value) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i][key] === value) {
+                    return list[i];
+                }
+            }
+            return null;
+        }
 
-        // --- 3. MAIN LOGIC ---
-        async function loadBluebikesData() {
-            try {
-                // Time Check: If date is < 2023, SSL often fails on BrightSign
-                const currentYear = new Date().getFullYear();
-                if (currentYear < 2023) {
-                    showError("System Time Incorrect (" + currentYear + "). SSL will fail. Check player time settings.");
+        // --- MAIN LOGIC ---
+        function start() {
+            log("Step 1: Fetching Feed List...");
+            
+            getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
+                
+                var feeds = gbfsData.data.en.feeds;
+                var infoFeed = null;
+                var statusFeed = null;
+
+                // Find the URLs manually (No arrow functions)
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].name === 'station_information') infoFeed = feeds[i].url;
+                    if (feeds[i].name === 'station_status') statusFeed = feeds[i].url;
+                }
+
+                if (!infoFeed || !statusFeed) {
+                    log("Error: Could not find feed URLs in GBFS.");
                     return;
                 }
 
-                // 1. Get the feed URLs
-                // We add ?t=... to prevent aggressive caching
-                const gbfsReq = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json?t=' + Date.now());
-                if (!gbfsReq.ok) throw new Error("Failed to fetch GBFS root");
-                
-                const gbfsData = await gbfsReq.json();
-                const feeds = gbfsData.data.en.feeds;
-                
-                const infoFeed = feeds.find(function(f) { return f.name === 'station_information'; });
-                const statusFeed = feeds.find(function(f) { return f.name === 'station_status'; });
-
-                if (!infoFeed || !statusFeed) throw new Error("Could not find feed URLs");
-
-                // 2. Fetch Info and Status
-                const infoRes = await fetch(infoFeed.url);
-                const statusRes = await fetch(statusFeed.url);
-
-                if (!infoRes.ok || !statusRes.ok) throw new Error("Failed to fetch station details");
-
-                const infoJson = await infoRes.json();
-                const statusJson = await statusRes.json();
-
-                // 3. Process Data
-                const stationsToRender = [];
-
-                TARGET_STATIONS.forEach(function(targetId) {
-                    const info = infoJson.data.stations.find(function(s) { return s.short_name === targetId; });
+                log("Step 2: Fetching Station Info...");
+                getJSON(infoFeed, function(infoData) {
                     
-                    // SAFE FIND: Logic adapted to be compatible with older JS engines (No optional chaining)
-                    let status = null;
-                    if (info) {
-                        status = statusJson.data.stations.find(function(s) { return s.station_id === info.station_id; });
-                    }
+                    log("Step 3: Fetching Station Status...");
+                    getJSON(statusFeed, function(statusData) {
+                        
+                        log("Step 4: Rendering Data...");
+                        render(infoData, statusData);
+                        
+                    }, function(err) { log(err); }); // Fail Status
+                }, function(err) { log(err); }); // Fail Info
+            }, function(err) { log(err); }); // Fail GBFS
+        }
 
-                    if (info && status) {
-                        stationsToRender.push({
-                            name: info.name,
-                            ebikes: status.num_ebikes_available,
-                            classic: (status.num_bikes_available || 0) - (status.num_ebikes_available || 0),
-                            docks: status.num_docks_available
-                        });
-                    }
-                });
+        function render(infoJson, statusJson) {
+            var container = document.getElementById('app');
+            var html = '';
+            
+            // Loop through our specific target IDs
+            for (var i = 0; i < TARGET_STATIONS.length; i++) {
+                var targetId = TARGET_STATIONS[i];
+                
+                // Find matching data
+                var info = findStation(infoJson.data.stations, 'short_name', targetId);
+                
+                if (info) {
+                    var status = findStation(statusJson.data.stations, 'station_id', info.station_id);
+                    
+                    if (status) {
+                        var ebikes = status.num_ebikes_available || 0;
+                        var totalBikes = status.num_bikes_available || 0;
+                        var classic = totalBikes - ebikes;
+                        var docks = status.num_docks_available || 0;
 
-                // 4. Render HTML
-                if (stationsToRender.length === 0) {
-                    document.getElementById('app').innerHTML = '<div style="text-align:center; font-size:40px;">No matching stations found.</div>';
-                    return;
+                        html += '<div class="station-card">';
+                        html += '<div class="station-name">' + info.name + '</div>';
+                        html += '<div class="stats-grid">';
+                        
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + classic + '</span>';
+                        html += '<span class="stat-label">Classic</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + ebikes + '</span>';
+                        html += '<span class="stat-label">E-Bikes</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + docks + '</span>';
+                        html += '<span class="stat-label">Open Docks</span>';
+                        html += '</div>';
+
+                        html += '</div></div>';
+                    }
                 }
+            }
 
-                let html = '';
-                stationsToRender.forEach(function(s) {
-                    html += `
-                        <div class="station-card">
-                            <div class="station-name">${s.name}</div>
-                            <div class="stats-grid">
-                                <div class="stat-box">
-                                    <span class="stat-number">${s.classic}</span>
-                                    <span class="stat-label">Classic</span>
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-number">${s.ebikes}</span>
-                                    <span class="stat-label">E-Bikes</span>
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-number">${s.docks}</span>
-                                    <span class="stat-label">Open Docks</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                document.getElementById('app').innerHTML = html;
-
-            } catch (error) {
-                showError(error.message);
+            if (html === '') {
+                log("Data loaded, but no matching stations found.");
+            } else {
+                container.innerHTML = html;
+                log("Success.");
+                // Hide log on success after 2 seconds
+                setTimeout(function() { 
+                    document.getElementById('debug-log').style.display = 'none'; 
+                }, 2000);
             }
         }
 
-        // Run once on load
-        loadBluebikesData();
+        // Start the process
+        start();
+
     </script>
 </body>
 </html>
