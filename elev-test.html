@@ -162,7 +162,7 @@
                 const statusJson = await statusRes.json();
 
                 render(infoJson, statusJson);
-                updateLastRefreshed();
+                //updateLastRefreshed();
 
             } catch (error) {
                 console.error("Error fetching Bluebikes data:", error);
@@ -215,13 +215,14 @@
 
             container.innerHTML = html;
         }
-
+        /*
         function updateLastRefreshed() {
             const now = new Date();
             const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
             const sub = document.querySelector('.subtitle');
             if(sub) sub.innerText = `Last Updated: ${timeString}`;
         }
+        */
 
         // --- STARTUP ---
         fetchBluebikesData();
