@@ -8,7 +8,7 @@
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,72 +23,100 @@
             
             display: flex;
             flex-direction: column;
-            padding: 3vh 3vw;
+            padding: 4vh 4vw;
         }
 
-        /* --- HEADER --- */
-        header {
-            flex: 0 0 auto;
+        /* --- MAIN WHITE CARD WRAPPER --- */
+        #main-card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 3vh 3vw;
+            margin-bottom: 2vh;
+            flex: 1; 
+        }
+
+        /* --- HEADER CONTAINER --- */
+        .card-header {
+            display: flex;
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center; /* This centers the content horizontally */
+            margin-bottom: 2vh;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 2vh;
+            flex-shrink: 0;
+        }
+
+        /* Top Row: Logo + "@ City Hall" */
+        .header-top-row {
             display: flex;
             align-items: center;
-            gap: 1.5vw;
-            margin-bottom: 2vh;
-            padding-left: 1vw; /* Align slightly with card */
+            gap: 15px;
+            margin-bottom: 0.5vh;
         }
 
         .bluebikes-logo {
-            height: 3.5vh; /* Much smaller */
+            height: 3.3vh; 
             width: auto;
         }
 
         .header-title {
-            font-size: 3.5vh;
+            font-size: 3vh;
             font-weight: 700;
-            color: #222;
-            letter-spacing: -0.02em;
+            color: #111;
         }
 
-        /* --- MAIN CARD CONTAINER --- */
-        #app {
-            flex: 1 1 auto;
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e5e7eb;
-            
+        /* Bottom Row: Subtitle */
+        .header-subtitle {
+            font-size: 1.8vh;
+            color: #6b7280; 
+            font-weight: 500;
+            margin-left: 0.5vw; 
+        }
+
+        /* --- STATION LIST CONTAINER --- */
+        #station-list {
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Ensures corners clip content */
+            gap: 2vh; 
+            overflow-y: hidden; 
+            justify-content: center; 
+            flex: 1;
         }
 
-        /* --- STATION ROW --- */
-        .station-row {
-            flex: 1; /* Rows take equal height */
+        /* --- INDIVIDUAL STATION BLOCK --- */
+        .station-block {
+            border: 2px solid #e5e7eb;
+            background: #F9FAFB;
+            border-radius: 1rem;
+            padding: 2.5vh 2vw;
             display: flex;
+            flex-direction: column; 
             align-items: center;
-            justify-content: space-between;
-            padding: 0 3vw;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .station-row:last-child {
-            border-bottom: none;
         }
 
         .station-name {
-            font-size: 3vh;
+            font-size: 2.8vh;
             font-weight: 700;
             color: #1c4587;
-            flex: 1; /* Takes available space on left */
-            padding-right: 2vw;
+            text-align: center;
+            width: 100%;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 1.5vh;
+            margin-bottom: 1.5vh;
+            line-height: 1.2;
         }
 
-        /* --- STATS GROUP (RIGHT SIDE) --- */
+        /* --- STATS ROW --- */
         .stats-group {
             display: flex;
-            gap: 3vw;
-            text-align: center;
-            flex-shrink: 0; /* Prevents squishing */
+            width: 100%;
+            justify-content: space-around; 
+            align-items: flex-start;
         }
 
         .stat-box {
@@ -96,11 +124,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-width: 6vw;
         }
 
         .stat-number {
-            font-size: 5vh;
+            font-size: 5.5vh; 
             font-weight: 700;
             color: #222;
             line-height: 1;
@@ -108,19 +135,24 @@
         }
 
         .stat-label {
-            font-size: 1.5vh;
-            color: #555;
+            font-size: 1.6vh;
+            color: #6b7280;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.3vw;
         }
 
         /* --- FOOTER --- */
         footer {
-            flex: 0 0 auto;
+            flex-shrink: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding-top: 2vh;
-            height: 10vh;
+            padding-top: 1vh;
+            height: 8vh;
         }
 
         .boston-logo {
@@ -129,28 +161,29 @@
             max-height: 6vh;
         }
 
-        /* Loading State */
-        .loading-msg {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            font-size: 2.5vh;
-            color: #999;
+        .bolt-icon {
+            color: #f59e0b;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
-        <span class="header-title">@ City Hall</span>
-    </header>
-    
-    <div id="app">
-        <div class="loading-msg">Loading Station Data...</div>
+    <!-- Main Card -->
+    <div id="main-card">
+        <div class="card-header">
+            <div class="header-top-row">
+                <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
+                <span class="header-title">Near City Hall</span>
+            </div>
+            <!--<div class="header-subtitle">Real-time Station Updates</div>-->
+        </div>
+        
+        <div id="station-list">
+            <div style="text-align:center; color:#999; font-size: 2vh;">Loading Station Data...</div>
+        </div>
     </div>
 
+    <!-- Footer -->
     <footer>
         <img src="https://assets.boston.gov/icons/dept_icons/boston_bikes_icon.svg" alt="Boston Bikes" class="boston-logo">
     </footer>
@@ -159,29 +192,23 @@
         // --- CONFIGURATION ---
         var TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
 
-        // --- HELPER: OLD SCHOOL AJAX REQUEST ---
+        // --- HELPER: AJAX ---
         function getJSON(url, successCallback, errorCallback) {
             var xhr = new XMLHttpRequest();
             var cacheBuster = (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + new Date().getTime();
-            
             xhr.open('GET', url + cacheBuster, true);
-            
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) { 
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            successCallback(data);
-                        } catch (e) {
-                            if(errorCallback) errorCallback("JSON Parse Error");
-                        }
-                    }
+                if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        successCallback(data);
+                    } catch (e) { if(errorCallback) errorCallback(e); }
                 }
             };
             xhr.send();
         }
 
-        // --- HELPER: FIND ARRAY ITEM ---
+        // --- HELPER: SEARCH ---
         function findStation(list, key, value) {
             for (var i = 0; i < list.length; i++) {
                 if (list[i][key] === value) return list[i];
@@ -189,30 +216,29 @@
             return null;
         }
 
-        // --- MAIN LOGIC ---
+        // --- MAIN ---
         function start() {
             getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
                 var feeds = gbfsData.data.en.feeds;
-                var infoFeed = null;
-                var statusFeed = null;
+                var infoFeed, statusFeed;
 
                 for (var i = 0; i < feeds.length; i++) {
                     if (feeds[i].name === 'station_information') infoFeed = feeds[i].url;
                     if (feeds[i].name === 'station_status') statusFeed = feeds[i].url;
                 }
 
-                if (!infoFeed || !statusFeed) return;
-
-                getJSON(infoFeed, function(infoData) {
-                    getJSON(statusFeed, function(statusData) {
-                        render(infoData, statusData);
-                    }); 
-                }); 
+                if (infoFeed && statusFeed) {
+                    getJSON(infoFeed, function(infoData) {
+                        getJSON(statusFeed, function(statusData) {
+                            render(infoData, statusData);
+                        }); 
+                    });
+                }
             }); 
         }
 
         function render(infoJson, statusJson) {
-            var container = document.getElementById('app');
+            var container = document.getElementById('station-list');
             var html = '';
             
             for (var i = 0; i < TARGET_STATIONS.length; i++) {
@@ -228,11 +254,12 @@
                         var classic = totalBikes - ebikes;
                         var docks = status.num_docks_available || 0;
 
-                        // Simple text bolt for E-bikes to avoid complex SVG in JS strings
-                        var boltIcon = '⚡'; 
-
-                        html += '<div class="station-row">';
+                        html += '<div class="station-block">';
+                        
+                        // NAME
                         html += '  <div class="station-name">' + info.name + '</div>';
+                        
+                        // STATS
                         html += '  <div class="stats-group">';
                         
                         html += '    <div class="stat-box">';
@@ -242,7 +269,7 @@
 
                         html += '    <div class="stat-box">';
                         html += '      <span class="stat-number">' + ebikes + '</span>';
-                        html += '      <span class="stat-label">' + boltIcon + ' Ebikes</span>';
+                        html += '      <span class="stat-label"><span class="bolt-icon">⚡</span> Ebikes</span>';
                         html += '    </div>';
 
                         html += '    <div class="stat-box">';
@@ -250,18 +277,16 @@
                         html += '      <span class="stat-label">Docks</span>';
                         html += '    </div>';
 
-                        html += '  </div>'; // End stats-group
-                        html += '</div>'; // End station-row
+                        html += '  </div>'; 
+                        html += '</div>'; 
                     }
                 }
             }
 
-            if (html !== '') {
-                container.innerHTML = html;
-            }
+            if (html !== '') container.innerHTML = html;
         }
 
-        // --- INIT ---
+        // --- RUN ---
         start();
 
     </script>
