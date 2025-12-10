@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport tag is CRITICAL for fitting the screen -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bluebikes Display</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            /* Uses viewport units to fit screen exactly without scrolling */
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
+            
+            /* Background color matching the widget feel */
+            background-color: #f0f7ff; 
+            font-family: 'Inter', Arial, sans-serif;
+            color: #1f2937;
+            
+            display: flex;
+            flex-direction: column;
+            padding: 3vh 3vw;
+        }
+
+        /* --- HEADER STYLING --- */
+        header {
+            flex: 0 0 auto;
+            background-color: white;
+            border-radius: 1rem;
+            padding: 2vh 3vw;
+            margin-bottom: 2vh;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5vw;
+        }
+
+        .bluebikes-logo {
+            height: 4.5vh; 
+            width: auto;
+        }
+
+        .header-title {
+            font-size: 3.5vh;
+            font-weight: 700;
+            color: #222;
+            letter-spacing: -0.02em;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .boston-logo {
+            height: 6vh; /* Slightly larger to show the red accent clearly */
+            width: auto;
+        }
+
+        /* --- Container --- */
+        #app {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh; 
+        }
+
+        /* --- Card Styling --- */
+        .station-card {
+            flex: 1; /* Stretches to fill vertical space equally */
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 2vw;
+        }
+
+        .station-name {
+            font-size: 3.5vh;
+            font-weight: 700;
+            color: #1c4587;
+            text-align: center;
+            margin-bottom: 2vh;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 1vh;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .stat-box {
+            flex: 1;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 6vh;
+            font-weight: 700;
+            color: #111827;
+            line-height: 1;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 1.8vh;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            margin-top: 1vh;
+            font-weight: 600;
+        }
+        
+        /* Debug/Loading */
+        #status-text {
+            text-align: center;
+            color: #999;
+            margin-top: 20px;
+            font-size: 2vh;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
+            <span class="header-title">Near City Hall</span>
+        </div>
+        <div class="header-right">
+            <!-- The red accent is inside this SVG -->
+            <img src="https://assets.boston.gov/icons/dept_icons/boston_bikes_icon.svg" alt="Boston Bikes" class="boston-logo">
+        </div>
+    </header>
+    
+    <div id="app">
+        <div id="status-text">Loading data...</div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        var TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
+
+        // --- HELPER: OLD SCHOOL AJAX REQUEST ---
+        function getJSON(url, successCallback, errorCallback) {
+            var xhr = new XMLHttpRequest();
+            var cacheBuster = (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + new Date().getTime();
+            
+            xhr.open('GET', url + cacheBuster, true);
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) { 
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            successCallback(data);
+                        } catch (e) {
+                            if(errorCallback) errorCallback("JSON Parse Error");
+                        }
+                    } else {
+                        if(errorCallback) errorCallback("HTTP Error " + xhr.status);
+                    }
+                }
+            };
+            
+            xhr.onerror = function() {
+                if(errorCallback) errorCallback("Network Error");
+            };
+            
+            xhr.send();
+        }
+
+        // --- HELPER: FIND ARRAY ITEM ---
+        function findStation(list, key, value) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i][key] === value) {
+                    return list[i];
+                }
+            }
+            return null;
+        }
+
+        // --- MAIN LOGIC ---
+        function start() {
+            getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
+                
+                var feeds = gbfsData.data.en.feeds;
+                var infoFeed = null;
+                var statusFeed = null;
+
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].name === 'station_information') infoFeed = feeds[i].url;
+                    if (feeds[i].name === 'station_status') statusFeed = feeds[i].url;
+                }
+
+                if (!infoFeed || !statusFeed) return;
+
+                getJSON(infoFeed, function(infoData) {
+                    getJSON(statusFeed, function(statusData) {
+                        render(infoData, statusData);
+                    }); 
+                }); 
+            }); 
+        }
+
+        function render(infoJson, statusJson) {
+            var container = document.getElementById('app');
+            var html = '';
+            
+            for (var i = 0; i < TARGET_STATIONS.length; i++) {
+                var targetId = TARGET_STATIONS[i];
+                var info = findStation(infoJson.data.stations, 'short_name', targetId);
+                
+                if (info) {
+                    var status = findStation(statusJson.data.stations, 'station_id', info.station_id);
+                    
+                    if (status) {
+                        var ebikes = status.num_ebikes_available || 0;
+                        var totalBikes = status.num_bikes_available || 0;
+                        var classic = totalBikes - ebikes;
+                        var docks = status.num_docks_available || 0;
+
+                        html += '<div class="station-card">';
+                        html += '<div class="station-name">' + info.name + '</div>';
+                        html += '<div class="stats-grid">';
+                        
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + classic + '</span>';
+                        html += '<span class="stat-label">Classic</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + ebikes + '</span>';
+                        html += '<span class="stat-label">E-Bikes</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + docks + '</span>';
+                        html += '<span class="stat-label">Open Docks</span>';
+                        html += '</div>';
+
+                        html += '</div></div>';
+                    }
+                }
+            }
+
+            if (html !== '') {
+                container.innerHTML = html;
+            }
+        }
+
+        // --- INIT ---
+        start();
+
+    </script>
+</body>
+</html>
