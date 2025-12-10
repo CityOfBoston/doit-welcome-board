@@ -2,76 +2,77 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- This tag is CRITICAL for fitting the screen correctly -->
+    <!-- Viewport tag is CRITICAL for fitting the screen -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bluebikes Display - City Hall</title>
+    <title>Bluebikes Display</title>
     
-    <!-- Google Fonts: Inter (From your styling reference) -->
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* CSS Reset */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
-            /* Use Viewport units instead of fixed pixels to ensure fit */
+            /* Uses viewport units to fit screen exactly without scrolling */
             width: 100vw;
             height: 100vh;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden; 
             
-            background-color: #f3f4f6; /* Light gray background */
-            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            font-family: 'Inter', Arial, sans-serif;
             color: #1f2937;
             
             display: flex;
             flex-direction: column;
-            padding: 3vh 3vw; /* Responsive padding */
+            padding: 3vh 3vw;
         }
 
-        /* Header Section */
+        /* Header */
         header {
-            flex: 0 0 auto; /* Don't stretch */
+            flex: 0 0 auto;
             text-align: center;
-            margin-bottom: 3vh;
+            margin-bottom: 2vh;
             border-bottom: 2px solid #e5e7eb;
             padding-bottom: 2vh;
         }
 
         h1 {
-            font-size: 5vh; /* Scales with screen height */
+            font-size: 5vh;
             font-weight: 700;
-            color: #1c4587; /* Bluebikes Blue */
+            color: #1c4587;
             margin-bottom: 0.5vh;
         }
 
         .subtitle {
-            font-size: 2vh;
+            font-size: 2.2vh;
             color: #6b7280;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        /* Container for the cards */
+        /* Container */
         #app {
-            flex: 1 1 auto; /* Take up all remaining space */
+            flex: 1 1 auto;
             display: flex;
             flex-direction: column;
-            gap: 2vh; /* Gap between cards */
+            gap: 2vh; 
         }
 
         /* Card Styling */
         .station-card {
-            flex: 1; /* Each card takes equal vertical space */
+            flex: 1; /* Stretches to fill vertical space equally */
             background: white;
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 1px solid #e5e7eb;
             
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 2vh 2vw;
+            padding: 0 2vw;
         }
 
         .station-name {
@@ -85,11 +86,12 @@
         }
 
         .stats-grid {
+            display: table; /* Fallback for very old browsers */
             display: flex;
             justify-content: space-around;
             align-items: center;
             text-align: center;
-            height: 100%;
+            width: 100%;
         }
 
         .stat-box {
@@ -98,7 +100,7 @@
 
         .stat-number {
             display: block;
-            font-size: 6vh; /* Big readable numbers */
+            font-size: 6vh;
             font-weight: 700;
             color: #1c4587;
             line-height: 1;
@@ -114,121 +116,151 @@
             font-weight: 600;
         }
 
-        /* Loading / Error State */
-        .status-message {
+        /* Loading Text */
+        #status-text {
             text-align: center;
-            font-size: 2vh;
-            color: #6b7280;
+            color: #999;
             margin-top: 20px;
+            font-size: 2vh;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Bluebikes Near City Hall</h1>
-        <div class="subtitle">Real-Time Station Status</div>
+        <h1>Bluebikes Availability</h1>
+        <div class="subtitle">Real-time Station Status</div>
     </header>
     
     <div id="app">
-        <div class="status-message">Loading Station Data...</div>
+        <div id="status-text">Loading data...</div>
     </div>
 
     <script>
         // --- CONFIGURATION ---
-        // 1. Congress St at Boston City Hall
-        // 2. Government Center - Cambridge St at Court St
-        // 3. Boston City Hall - 28 State St
-        const TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
+        var TARGET_STATIONS = ['B32008', 'D32009', 'B32032']; 
 
-        // --- HELPER: FETCH DATA ---
-        async function fetchBluebikesData() {
-            try {
-                // 1. Get the discovery feed to find URLs
-                const gbfsResponse = await fetch('https://gbfs.bluebikes.com/gbfs/gbfs.json');
-                const gbfsData = await gbfsResponse.json();
-                
-                const feeds = gbfsData.data.en.feeds;
-                const infoUrl = feeds.find(f => f.name === 'station_information').url;
-                const statusUrl = feeds.find(f => f.name === 'station_status').url;
-
-                // 2. Fetch Info and Status in parallel
-                const [infoRes, statusRes] = await Promise.all([
-                    fetch(infoUrl),
-                    fetch(statusUrl)
-                ]);
-
-                const infoJson = await infoRes.json();
-                const statusJson = await statusRes.json();
-
-                render(infoJson, statusJson);
-                //updateLastRefreshed();
-
-            } catch (error) {
-                console.error("Error fetching Bluebikes data:", error);
-                // Don't wipe the screen on error, just log it.
-                // If it's the first load, show error.
-                if(document.querySelector('.status-message')) {
-                    document.getElementById('app').innerHTML = '<div class="status-message">Check Internet Connection</div>';
+        // --- HELPER: OLD SCHOOL AJAX REQUEST ---
+        function getJSON(url, successCallback, errorCallback) {
+            var xhr = new XMLHttpRequest();
+            // Cache buster to ensure fresh data
+            var cacheBuster = (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + new Date().getTime();
+            
+            xhr.open('GET', url + cacheBuster, true);
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) { 
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            successCallback(data);
+                        } catch (e) {
+                            if(errorCallback) errorCallback("JSON Parse Error");
+                        }
+                    } else {
+                        if(errorCallback) errorCallback("HTTP Error " + xhr.status);
+                    }
                 }
+            };
+            
+            xhr.onerror = function() {
+                if(errorCallback) errorCallback("Network Error");
+            };
+            
+            xhr.send();
+        }
+
+        // --- HELPER: FIND ARRAY ITEM ---
+        function findStation(list, key, value) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i][key] === value) {
+                    return list[i];
+                }
+            }
+            return null;
+        }
+
+        // --- MAIN LOGIC ---
+        function start() {
+            // 1. Get Feed List
+            getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
+                
+                var feeds = gbfsData.data.en.feeds;
+                var infoFeed = null;
+                var statusFeed = null;
+
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].name === 'station_information') infoFeed = feeds[i].url;
+                    if (feeds[i].name === 'station_status') statusFeed = feeds[i].url;
+                }
+
+                if (!infoFeed || !statusFeed) return;
+
+                // 2. Get Station Info
+                getJSON(infoFeed, function(infoData) {
+                    
+                    // 3. Get Station Status
+                    getJSON(statusFeed, function(statusData) {
+                        
+                        // 4. Render
+                        render(infoData, statusData);
+                        
+                    }); 
+                }); 
+            }); 
+        }
+
+        function render(infoJson, statusJson) {
+            var container = document.getElementById('app');
+            var html = '';
+            
+            for (var i = 0; i < TARGET_STATIONS.length; i++) {
+                var targetId = TARGET_STATIONS[i];
+                var info = findStation(infoJson.data.stations, 'short_name', targetId);
+                
+                if (info) {
+                    var status = findStation(statusJson.data.stations, 'station_id', info.station_id);
+                    
+                    if (status) {
+                        var ebikes = status.num_ebikes_available || 0;
+                        var totalBikes = status.num_bikes_available || 0;
+                        var classic = totalBikes - ebikes;
+                        var docks = status.num_docks_available || 0;
+
+                        html += '<div class="station-card">';
+                        html += '<div class="station-name">' + info.name + '</div>';
+                        html += '<div class="stats-grid">';
+                        
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + classic + '</span>';
+                        html += '<span class="stat-label">Classic</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + ebikes + '</span>';
+                        html += '<span class="stat-label">E-Bikes</span>';
+                        html += '</div>';
+
+                        html += '<div class="stat-box">';
+                        html += '<span class="stat-number">' + docks + '</span>';
+                        html += '<span class="stat-label">Open Docks</span>';
+                        html += '</div>';
+
+                        html += '</div></div>';
+                    }
+                }
+            }
+
+            if (html !== '') {
+                container.innerHTML = html;
             }
         }
 
-        // --- HELPER: RENDER ---
-        function render(infoJson, statusJson) {
-            const container = document.getElementById('app');
-            let html = '';
-            
-            TARGET_STATIONS.forEach(targetId => {
-                const info = infoJson.data.stations.find(s => s.short_name === targetId);
-                
-                if (info) {
-                    const status = statusJson.data.stations.find(s => s.station_id === info.station_id);
-                    
-                    if (status) {
-                        const ebikes = status.num_ebikes_available || 0;
-                        const totalBikes = status.num_bikes_available || 0;
-                        const classic = totalBikes - ebikes;
-                        const docks = status.num_docks_available || 0;
+        // --- INIT ---
+        start();
 
-                        html += `
-                        <div class="station-card">
-                            <div class="station-name">${info.name}</div>
-                            <div class="stats-grid">
-                                <div class="stat-box">
-                                    <span class="stat-number">${classic}</span>
-                                    <span class="stat-label">Classic</span>
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-number">${ebikes}</span>
-                                    <span class="stat-label">E-Bikes</span>
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-number">${docks}</span>
-                                    <span class="stat-label">Open Docks</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    }
-                }
-            });
-
-            container.innerHTML = html;
-        }
-        /*
-        function updateLastRefreshed() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            const sub = document.querySelector('.subtitle');
-            if(sub) sub.innerText = `Last Updated: ${timeString}`;
-        }
-        */
-
-        // --- STARTUP ---
-        fetchBluebikesData();
-
-        // Auto-refresh every 30 seconds
-        setInterval(fetchBluebikesData, 30000);
+        // Refresh every 60 seconds automatically
+        //setInterval(start, 60000);
 
     </script>
 </body>
