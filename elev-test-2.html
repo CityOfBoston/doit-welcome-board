@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport settings to ensure it fits the screen exactly -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bluebikes Display</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; 
+            background-color: #f3f4f6;
+            font-family: 'Inter', Arial, sans-serif;
+            color: #1f2937;
+            display: flex;
+            flex-direction: column;
+            padding: 3vh 3vw;
+        }
+
+        /* --- Header --- */
+        header {
+            flex: 0 0 auto;
+            text-align: center;
+            margin-bottom: 2vh;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 2vh;
+        }
+
+        h1 {
+            font-size: 5vh;
+            font-weight: 700;
+            color: #1c4587;
+            margin-bottom: 0.5vh;
+        }
+
+        .subtitle {
+            font-size: 2.2vh;
+            color: #6b7280;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* --- Main Container --- */
+        #app {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2vh; 
+        }
+
+        /* --- Card Styling --- */
+        .station-card {
+            flex: 1; /* Stretches to fill available space */
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 2vw;
+            transition: opacity 0.3s;
+        }
+
+        .station-name {
+            font-size: 3.5vh;
+            font-weight: 700;
+            color: #111827;
+            text-align: center;
+            margin-bottom: 2vh;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 1vh;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stats-grid {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .stat-box {
+            flex: 1;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 6vh;
+            font-weight: 700;
+            color: #1c4587;
+            line-height: 1;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 1.8vh;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            margin-top: 1vh;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Bluebikes Availability</h1>
+        <div class="subtitle">Real-time Station Status</div>
+    </header>
+    
+    <div id="app">
+        <!-- CARD 1 (Index 0) -->
+        <div class="station-card">
+            <div class="station-name" id="name-0">Loading...</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number" id="classic-0">-</span>
+                    <span class="stat-label">Classic</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="ebike-0">-</span>
+                    <span class="stat-label">E-Bikes</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="docks-0">-</span>
+                    <span class="stat-label">Open Docks</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 2 (Index 1) -->
+        <div class="station-card">
+            <div class="station-name" id="name-1">Loading...</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number" id="classic-1">-</span>
+                    <span class="stat-label">Classic</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="ebike-1">-</span>
+                    <span class="stat-label">E-Bikes</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="docks-1">-</span>
+                    <span class="stat-label">Open Docks</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 3 (Index 2) -->
+        <div class="station-card">
+            <div class="station-name" id="name-2">Loading...</div>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <span class="stat-number" id="classic-2">-</span>
+                    <span class="stat-label">Classic</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="ebike-2">-</span>
+                    <span class="stat-label">E-Bikes</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-number" id="docks-2">-</span>
+                    <span class="stat-label">Open Docks</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // These correspond to the HTML cards above (0, 1, and 2)
+        var STATIONS_ORDER = ['B32008', 'D32009', 'B32032']; 
+
+        // --- HELPER: OLD SCHOOL AJAX REQUEST ---
+        function getJSON(url, successCallback, errorCallback) {
+            var xhr = new XMLHttpRequest();
+            var cacheBuster = (url.indexOf('?') >= 0 ? '&' : '?') + 't=' + new Date().getTime();
+            xhr.open('GET', url + cacheBuster, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        successCallback(data);
+                    } catch (e) { if(errorCallback) errorCallback(e); }
+                }
+            };
+            xhr.send();
+        }
+
+        // --- HELPER: FIND DATA ---
+        function findStation(list, key, value) {
+            for (var i = 0; i < list.length; i++) {
+                if (list[i][key] === value) return list[i];
+            }
+            return null;
+        }
+
+        // --- MAIN LOGIC ---
+        function start() {
+            // 1. Get GBFS Feed
+            getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
+                var feeds = gbfsData.data.en.feeds;
+                var infoFeed, statusFeed;
+
+                for (var i = 0; i < feeds.length; i++) {
+                    if (feeds[i].name === 'station_information') infoFeed = feeds[i].url;
+                    if (feeds[i].name === 'station_status') statusFeed = feeds[i].url;
+                }
+
+                if (infoFeed && statusFeed) {
+                    // 2. Get Info
+                    getJSON(infoFeed, function(infoData) {
+                        // 3. Get Status
+                        getJSON(statusFeed, function(statusData) {
+                            // 4. Update the HTML
+                            updateDisplay(infoData, statusData);
+                        });
+                    });
+                }
+            });
+        }
+
+        function updateDisplay(infoJson, statusJson) {
+            // Loop through our configured station list
+            for (var i = 0; i < STATIONS_ORDER.length; i++) {
+                var targetId = STATIONS_ORDER[i];
+                
+                // Find data in JSON
+                var info = findStation(infoJson.data.stations, 'short_name', targetId);
+                
+                if (info) {
+                    var status = findStation(statusJson.data.stations, 'station_id', info.station_id);
+                    
+                    if (status) {
+                        // Calculate numbers
+                        var ebikes = status.num_ebikes_available || 0;
+                        var total = status.num_bikes_available || 0;
+                        var classic = total - ebikes;
+                        var docks = status.num_docks_available || 0;
+
+                        // Update the specific HTML elements for this index (0, 1, or 2)
+                        var nameEl = document.getElementById('name-' + i);
+                        var classicEl = document.getElementById('classic-' + i);
+                        var ebikeEl = document.getElementById('ebike-' + i);
+                        var docksEl = document.getElementById('docks-' + i);
+
+                        if (nameEl) nameEl.innerText = info.name;
+                        if (classicEl) classicEl.innerText = classic;
+                        if (ebikeEl) ebikeEl.innerText = ebikes;
+                        if (docksEl) docksEl.innerText = docks;
+                    }
+                }
+            }
+        }
+
+        // --- INIT & AUTO REFRESH ---
+        start();
+        setInterval(start, 30000); // Refresh every 30 seconds
+
+    </script>
+</body>
+</html>
