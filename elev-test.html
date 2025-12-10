@@ -51,7 +51,6 @@
             flex-shrink: 0;
         }
 
-        /* Top Row: Logo + "@ City Hall" */
         .header-top-row {
             display: flex;
             align-items: center;
@@ -70,7 +69,6 @@
             color: #111;
         }
 
-        /* Bottom Row: Subtitle */
         .header-subtitle {
             font-size: 1.8vh;
             color: #6b7280; 
@@ -82,8 +80,7 @@
         #station-list {
             display: flex;
             flex-direction: column;
-            /* CHANGED: Increased gap from 2vh to 4vh for more vertical spacing between blocks */
-            gap: 4vh; 
+            /* REMOVED: gap: 4vh; (Not supported on older BrightSign firmware) */
             overflow-y: hidden; 
             justify-content: center; 
             flex: 1;
@@ -94,11 +91,18 @@
             border: 2px solid #e5e7eb;
             background: #F9FAFB;
             border-radius: 1rem;
-            /* CHANGED: Reduced padding from 48px to 2.5vh to make the block "skinnier" */
             padding: 2.5vh 2vw;
             display: flex;
             flex-direction: column; 
             align-items: center;
+            
+            /* ADDED: Using margin for spacing instead of gap */
+            margin-bottom: 4vh;
+        }
+
+        /* ADDED: Removes margin from the last item so layout stays centered */
+        .station-block:last-child {
+            margin-bottom: 0;
         }
 
         .station-name {
@@ -129,7 +133,6 @@
         }
 
         .stat-number {
-            /* CHANGED: Decreased font size from 5.5vh to 5.0vh */
             font-size: 5.0vh; 
             font-weight: 700;
             color: #222;
@@ -155,13 +158,13 @@
             justify-content: center;
             align-items: center;
             padding-top: 1vh;
-            height: 8vh;
+            height: 12vh;
         }
 
         .boston-logo {
             height: 100%;
             width: auto;
-            max-height: 7vh;
+            max-height: 10vh;
         }
 
         .bolt-icon {
@@ -178,7 +181,6 @@
                 <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
                 <span class="header-title">Near City Hall</span>
             </div>
-            <!--<div class="header-subtitle">Real-time Station Updates</div>-->
         </div>
         
         <div id="station-list">
@@ -258,11 +260,7 @@
                         var docks = status.num_docks_available || 0;
 
                         html += '<div class="station-block">';
-                        
-                        // NAME
                         html += '  <div class="station-name">' + info.name + '</div>';
-                        
-                        // STATS
                         html += '  <div class="stats-group">';
                         
                         html += '    <div class="stat-box">';
@@ -289,9 +287,7 @@
             if (html !== '') container.innerHTML = html;
         }
 
-        // --- RUN ---
         start();
-
     </script>
 </body>
 </html>
