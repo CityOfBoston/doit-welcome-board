@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport tag is CRITICAL for fitting the screen -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bluebikes Display</title>
     
@@ -15,12 +14,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
-            /* Uses viewport units to fit screen exactly without scrolling */
             width: 100vw;
             height: 100vh;
             overflow: hidden; 
-            
-            /* Background color matching the widget feel */
             background-color: #f0f7ff; 
             font-family: 'Inter', Arial, sans-serif;
             color: #1f2937;
@@ -30,29 +26,18 @@
             padding: 3vh 3vw;
         }
 
-        /* --- HEADER STYLING --- */
+        /* --- HEADER --- */
         header {
             flex: 0 0 auto;
-            background-color: white;
-            border-radius: 1rem;
-            padding: 2vh 3vw;
-            margin-bottom: 2vh;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border: 1px solid #e5e7eb;
-            
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header-left {
             display: flex;
             align-items: center;
             gap: 1.5vw;
+            margin-bottom: 2vh;
+            padding-left: 1vw; /* Align slightly with card */
         }
 
         .bluebikes-logo {
-            height: 4.5vh; 
+            height: 3.5vh; /* Much smaller */
             width: auto;
         }
 
@@ -63,103 +48,112 @@
             letter-spacing: -0.02em;
         }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-        }
-
-        .boston-logo {
-            height: 6vh; /* Slightly larger to show the red accent clearly */
-            width: auto;
-        }
-
-        /* --- Container --- */
+        /* --- MAIN CARD CONTAINER --- */
         #app {
             flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 2vh; 
-        }
-
-        /* --- Card Styling --- */
-        .station-card {
-            flex: 1; /* Stretches to fill vertical space equally */
             background: white;
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
             border: 1px solid #e5e7eb;
             
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 0 2vw;
+            overflow: hidden; /* Ensures corners clip content */
+        }
+
+        /* --- STATION ROW --- */
+        .station-row {
+            flex: 1; /* Rows take equal height */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 3vw;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .station-row:last-child {
+            border-bottom: none;
         }
 
         .station-name {
-            font-size: 3.5vh;
+            font-size: 3vh;
             font-weight: 700;
             color: #1c4587;
-            text-align: center;
-            margin-bottom: 2vh;
-            border-bottom: 1px solid #f3f4f6;
-            padding-bottom: 1vh;
+            flex: 1; /* Takes available space on left */
+            padding-right: 2vw;
         }
 
-        .stats-grid {
+        /* --- STATS GROUP (RIGHT SIDE) --- */
+        .stats-group {
             display: flex;
-            justify-content: space-around;
-            align-items: center;
+            gap: 3vw;
             text-align: center;
-            width: 100%;
+            flex-shrink: 0; /* Prevents squishing */
         }
 
         .stat-box {
-            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 6vw;
         }
 
         .stat-number {
-            display: block;
-            font-size: 6vh;
+            font-size: 5vh;
             font-weight: 700;
-            color: #111827;
+            color: #222;
             line-height: 1;
+            margin-bottom: 0.5vh;
         }
 
         .stat-label {
-            display: block;
-            font-size: 1.8vh;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #6b7280;
-            margin-top: 1vh;
+            font-size: 1.5vh;
+            color: #555;
             font-weight: 600;
         }
-        
-        /* Debug/Loading */
-        #status-text {
-            text-align: center;
+
+        /* --- FOOTER --- */
+        footer {
+            flex: 0 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 2vh;
+            height: 10vh;
+        }
+
+        .boston-logo {
+            height: 100%;
+            width: auto;
+            max-height: 6vh;
+        }
+
+        /* Loading State */
+        .loading-msg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 2.5vh;
             color: #999;
-            margin-top: 20px;
-            font-size: 2vh;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-left">
-            <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
-            <span class="header-title">Near City Hall</span>
-        </div>
-        <div class="header-right">
-            <!-- The red accent is inside this SVG -->
-            <img src="https://assets.boston.gov/icons/dept_icons/boston_bikes_icon.svg" alt="Boston Bikes" class="boston-logo">
-        </div>
+        <img src="https://cdn.lyft.com/static/bikesharefe/logo/Bluebikes-main.svg" alt="Bluebikes" class="bluebikes-logo">
+        <span class="header-title">@ City Hall</span>
     </header>
     
     <div id="app">
-        <div id="status-text">Loading data...</div>
+        <div class="loading-msg">Loading Station Data...</div>
     </div>
+
+    <footer>
+        <img src="https://assets.boston.gov/icons/dept_icons/boston_bikes_icon.svg" alt="Boston Bikes" class="boston-logo">
+    </footer>
 
     <script>
         // --- CONFIGURATION ---
@@ -181,25 +175,16 @@
                         } catch (e) {
                             if(errorCallback) errorCallback("JSON Parse Error");
                         }
-                    } else {
-                        if(errorCallback) errorCallback("HTTP Error " + xhr.status);
                     }
                 }
             };
-            
-            xhr.onerror = function() {
-                if(errorCallback) errorCallback("Network Error");
-            };
-            
             xhr.send();
         }
 
         // --- HELPER: FIND ARRAY ITEM ---
         function findStation(list, key, value) {
             for (var i = 0; i < list.length; i++) {
-                if (list[i][key] === value) {
-                    return list[i];
-                }
+                if (list[i][key] === value) return list[i];
             }
             return null;
         }
@@ -207,7 +192,6 @@
         // --- MAIN LOGIC ---
         function start() {
             getJSON('https://gbfs.bluebikes.com/gbfs/gbfs.json', function(gbfsData) {
-                
                 var feeds = gbfsData.data.en.feeds;
                 var infoFeed = null;
                 var statusFeed = null;
@@ -244,26 +228,30 @@
                         var classic = totalBikes - ebikes;
                         var docks = status.num_docks_available || 0;
 
-                        html += '<div class="station-card">';
-                        html += '<div class="station-name">' + info.name + '</div>';
-                        html += '<div class="stats-grid">';
+                        // Simple text bolt for E-bikes to avoid complex SVG in JS strings
+                        var boltIcon = '⚡'; 
+
+                        html += '<div class="station-row">';
+                        html += '  <div class="station-name">' + info.name + '</div>';
+                        html += '  <div class="stats-group">';
                         
-                        html += '<div class="stat-box">';
-                        html += '<span class="stat-number">' + classic + '</span>';
-                        html += '<span class="stat-label">Classic</span>';
-                        html += '</div>';
+                        html += '    <div class="stat-box">';
+                        html += '      <span class="stat-number">' + classic + '</span>';
+                        html += '      <span class="stat-label">Classic</span>';
+                        html += '    </div>';
 
-                        html += '<div class="stat-box">';
-                        html += '<span class="stat-number">' + ebikes + '</span>';
-                        html += '<span class="stat-label">E-Bikes</span>';
-                        html += '</div>';
+                        html += '    <div class="stat-box">';
+                        html += '      <span class="stat-number">' + ebikes + '</span>';
+                        html += '      <span class="stat-label">' + boltIcon + ' Ebikes</span>';
+                        html += '    </div>';
 
-                        html += '<div class="stat-box">';
-                        html += '<span class="stat-number">' + docks + '</span>';
-                        html += '<span class="stat-label">Open Docks</span>';
-                        html += '</div>';
+                        html += '    <div class="stat-box">';
+                        html += '      <span class="stat-number">' + docks + '</span>';
+                        html += '      <span class="stat-label">Docks</span>';
+                        html += '    </div>';
 
-                        html += '</div></div>';
+                        html += '  </div>'; // End stats-group
+                        html += '</div>'; // End station-row
                     }
                 }
             }
