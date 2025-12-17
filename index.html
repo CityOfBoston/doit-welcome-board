@@ -72,6 +72,79 @@
             animation: spin 1.2s linear;
             transform-origin: center;
         }
+
+        /* === Carousel UI === */
+        #displayContainer { position: relative; }
+
+        .carousel-overlay{
+        position:absolute; inset:0;
+        pointer-events:none;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.06), rgba(0,0,0,0.00) 30%, rgba(0,0,0,0.06));
+        z-index: 2;
+        }
+
+        .carousel-progress{
+        position:absolute;
+        left:16px; right:16px; bottom:12px;
+        height:4px;
+        border-radius:9999px;
+        background: rgba(255,255,255,0.55);
+        border: 1px solid rgba(0,0,0,0.08);
+        overflow:hidden;
+        z-index: 6;
+        pointer-events:none;
+        }
+        .carousel-progress-bar{
+        height:100%;
+        width:0%;
+        background: rgba(17,24,39,0.85);
+        border-radius:9999px;
+        transform-origin:left center;
+        }
+
+        .carousel-btn{
+        position:absolute;
+        top:50%;
+        transform:translateY(-50%);
+        z-index: 7;
+        width:44px;
+        height:44px;
+        border-radius:9999px;
+        border:1px solid rgba(209,213,219,0.9);
+        background: rgba(255,255,255,0.82);
+        color:#111827;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:28px;
+        cursor:pointer;
+        backdrop-filter: blur(6px);
+        opacity: 0.85;
+        }
+        .carousel-btn.left{ left:14px; }
+        .carousel-btn.right{ right:14px; }
+
+        .carousel-dots{
+        position:absolute;
+        left:0; right:0;
+        bottom:24px;
+        z-index:7;
+        display:flex;
+        justify-content:center;
+        gap:8px;
+        }
+        .carousel-dot{
+        width:10px; height:10px;
+        border-radius:9999px;
+        border:1px solid rgba(0,0,0,0.18);
+        background: rgba(255,255,255,0.7);
+        cursor:pointer;
+        }
+        .carousel-dot.active{ background: rgba(17,24,39,0.85); }
+
+
+        .content-item { transform: translateY(6px) scale(0.995); transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out; }
+        .content-item.active { transform: translateY(0) scale(1); }
     </style>
 </head>
 <body class="h-screen flex flex-col" style="padding: 16px; background-color: #e5f2ff;">
@@ -79,6 +152,16 @@
     <div class="rounded-xl mb-4 relative flex-grow">
         <div id="displayContainer" class="w-full h-full relative overflow-hidden rounded-lg">
             <!-- Cycling content will appear here -->
+
+            <!-- subtle overlay (optional, modern look) -->
+            <div class="carousel-overlay"></div>
+
+            <!-- controls -->
+            <button id="prevBtn" class="carousel-btn left" aria-label="Previous slide">‹</button>
+            <button id="nextBtn" class="carousel-btn right" aria-label="Next slide">›</button>
+
+            <!-- dots -->
+            <div id="carouselDots" class="carousel-dots" aria-label="Slide navigation"></div>
         </div>
     </div>
     
@@ -146,11 +229,146 @@
 
     <script>
         const contentLinks = [ { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/DoITTitleSlide.png", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/ProjectGreenLight.png", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/WickedFreeWi-Fi.png", altText: "Wicked Free Wi-Fi Advertisement", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/refs/heads/main/AccessBostonFY25_WelcomeBoardGraphic.png", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/MayorsChallenge.png", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/main/Boston250.png", duration: 15}, { type: 'image', primary: "https://raw.githubusercontent.com/CityOfBoston/doit-welcome-board/refs/heads/main/ClimateTechRFI.png", duration: 15} ];
-        let currentIndex = 0; let cycleTimeout; const container = document.getElementById("displayContainer");
-        function createContentElement(item) { let element; if (item.type === 'iframe') { element = document.createElement('iframe'); element.src = item.primary; element.title = item.altText; } else if (item.type === 'image') { element = document.createElement('img'); element.src = item.primary; element.alt = item.altText; } return element; }
-        function showContent(index) { const item = contentLinks[index]; let contentWrapper = container.querySelector(`.content-item[data-index="${index}"]`); if (!contentWrapper) { contentWrapper = document.createElement('div'); contentWrapper.className = 'content-item'; contentWrapper.setAttribute('data-index', index); const contentElement = createContentElement(item); if (contentElement) contentWrapper.appendChild(contentElement); container.appendChild(contentWrapper); } const currentActive = container.querySelector('.content-item.active'); if (currentActive) currentActive.classList.remove('active'); setTimeout(() => contentWrapper.classList.add('active'), 50); }
-        function startCycle() { if (cycleTimeout) clearTimeout(cycleTimeout); showContent(currentIndex); const currentDuration = contentLinks[currentIndex].duration * 1000; currentIndex = (currentIndex + 1) % contentLinks.length; cycleTimeout = setTimeout(startCycle, currentDuration); }
-        
+        let currentIndex = 0;
+        let cycleTimeout = null;
+        let paused = false;
+
+        const container = document.getElementById("displayContainer");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const dotsEl = document.getElementById("carouselDots");
+
+        function createContentElement(item) {
+        let element;
+        if (item.type === 'iframe') {
+            element = document.createElement('iframe');
+            element.src = item.primary;
+            element.title = item.altText || 'Embedded content';
+            element.loading = 'lazy';
+            element.style.width = '100%';
+            element.style.height = '100%';
+            element.style.border = '0';
+        } else if (item.type === 'image') {
+            element = document.createElement('img');
+            element.src = item.primary;
+            element.alt = item.altText || '';
+            element.loading = 'eager';
+        }
+        return element;
+        }
+
+        function ensureSlide(index) {
+        let contentWrapper = container.querySelector(`.content-item[data-index="${index}"]`);
+        if (!contentWrapper) {
+            contentWrapper = document.createElement('div');
+            contentWrapper.className = 'content-item';
+            contentWrapper.setAttribute('data-index', String(index));
+            const contentElement = createContentElement(contentLinks[index]);
+            if (contentElement) contentWrapper.appendChild(contentElement);
+            container.appendChild(contentWrapper);
+        }
+        return contentWrapper;
+        }
+
+        function setActiveSlide(index) {
+        ensureSlide(index);
+
+        const currentActive = container.querySelector('.content-item.active');
+        if (currentActive) currentActive.classList.remove('active');
+
+        const target = container.querySelector(`.content-item[data-index="${index}"]`);
+        if (target) setTimeout(() => target.classList.add('active'), 50);
+
+        // dots
+        if (dotsEl) {
+            dotsEl.querySelectorAll('.carousel-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === index);
+            });
+        }
+        }
+
+        function renderDots() {
+        if (!dotsEl) return;
+        dotsEl.innerHTML = '';
+        contentLinks.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'carousel-dot' + (i === currentIndex ? ' active' : '');
+            dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+            dot.addEventListener('click', () => goTo(i, true));
+            dotsEl.appendChild(dot);
+        });
+        }
+
+        function scheduleNext() {
+        if (cycleTimeout) clearTimeout(cycleTimeout);
+
+        const seconds = contentLinks[currentIndex].duration ?? 15;
+        cycleTimeout = setTimeout(() => {
+            if (!paused) goTo(currentIndex + 1, false);
+            else scheduleNext(); // keep checking while paused
+        }, seconds * 1000);
+        }
+
+        function goTo(index, resetTimer = true) {
+        currentIndex = (index + contentLinks.length) % contentLinks.length;
+        setActiveSlide(currentIndex);
+        if (resetTimer) scheduleNext();
+        }
+
+        function startCycle() {
+        renderDots();
+        setActiveSlide(currentIndex);
+        scheduleNext();
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            goTo(currentIndex + 1, true);
+            });
+        }
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            goTo(currentIndex - 1, true);
+            });
+        }
+
+        // optional: pause on hover
+        container.addEventListener('mouseenter', () => { paused = true; });
+        container.addEventListener('mouseleave', () => { paused = false; });
+
+        // optional: keyboard
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') goTo(currentIndex + 1, true);
+            if (e.key === 'ArrowLeft') goTo(currentIndex - 1, true);
+        });
+        }
+
+
+        function startCycle() {
+        renderDots();
+        setActiveSlide(currentIndex);
+        scheduleNext();
+
+        nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goTo((currentIndex + 1) % contentLinks.length, true);
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goTo((currentIndex - 1 + contentLinks.length) % contentLinks.length, true);
+        });
+
+        container.addEventListener('mouseenter', () => { paused = true; });
+        container.addEventListener('mouseleave', () => { paused = false; });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') goTo(currentIndex + 1, true);
+            if (e.key === 'ArrowLeft') goTo(currentIndex - 1, true);
+        });
+        } 
         const MASTER_REFRESH_SECONDS = 20;
         const TRANSIT_SWITCH_SECONDS = 10;
         const MBTA_API_KEY = 'ec5c0e06114d498ab788b12888f05df2'; 
